@@ -1,20 +1,37 @@
 using Microsoft.AspNetCore.Identity;
+// using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation;
 using Microsoft.EntityFrameworkCore;
 using Warehouse_CMS.Data;
+using Warehouse_CMS.Models;
+using Warehouse_CMS.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var connectionString =
+    builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 var serverVersion = new MySqlServerVersion(new Version(8, 0, 21));
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(connectionString, serverVersion));
+    options.UseMySql(connectionString, serverVersion)
+);
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+builder
+    .Services.AddDefaultIdentity<IdentityUser>(options =>
+        options.SignIn.RequireConfirmedAccount = true
+    )
     .AddEntityFrameworkStores<ApplicationDbContext>();
-builder.Services.AddControllersWithViews();
+
+builder.Services.AddScoped<IProductRepository, MockProductRepository>();
+
+// builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
+
+// builder.Services.Configure<RazorViewEngineOptions>(options =>
+// {
+//     // You can add custom view locations here if needed
+//     // options.ViewLocationFormats.Add("/CustomViews/{1}/{0}" + RazorViewEngine.ViewExtension);
+// });
 
 var app = builder.Build();
 
@@ -35,11 +52,17 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
+
 app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    name: "products",
+    pattern: "products/{action=Index}/{id?}",
+    defaults: new { controller = "Product" }
+);
+
 app.MapRazorPages();
 
 app.Run();
