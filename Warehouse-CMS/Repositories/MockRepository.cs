@@ -3,9 +3,24 @@ using Warehouse_CMS.Repositories;
 public class MockProductRepository : IProductRepository
 {
     private List<Product> _products;
+    private readonly ICategoryRepository _categoryRepository;
 
-    public MockProductRepository()
+    public MockProductRepository(ICategoryRepository categoryRepository)
     {
+        _categoryRepository = categoryRepository;
+        var electronicsCategory = new Category
+        {
+            Id = 1,
+            Name = "Electronics",
+            Description = "Electronic devices and accessories",
+        };
+        var furnitureCategory = new Category
+        {
+            Id = 2,
+            Name = "Furniture",
+            Description = "Office and home furniture",
+        };
+
         _products = new List<Product>
         {
             new Product
@@ -15,7 +30,8 @@ public class MockProductRepository : IProductRepository
                 Description = "High-end laptop",
                 Price = 999.99m,
                 StockQuantity = 10,
-                Category = "Electronics",
+                CategoryId = electronicsCategory.Id,
+                Category = electronicsCategory,
             },
             new Product
             {
@@ -24,7 +40,8 @@ public class MockProductRepository : IProductRepository
                 Description = "Ergonomic office chair",
                 Price = 199.99m,
                 StockQuantity = 15,
-                Category = "Furniture",
+                CategoryId = furnitureCategory.Id,
+                Category = furnitureCategory,
             },
             new Product
             {
@@ -33,7 +50,8 @@ public class MockProductRepository : IProductRepository
                 Description = "27-inch 4K monitor",
                 Price = 299.99m,
                 StockQuantity = 5,
-                Category = "Electronics",
+                CategoryId = electronicsCategory.Id,
+                Category = electronicsCategory,
             },
         };
     }
@@ -45,6 +63,7 @@ public class MockProductRepository : IProductRepository
     public void Add(Product product)
     {
         product.Id = _products.Max(p => p.Id) + 1;
+        product.Category = _categoryRepository.GetById(product.CategoryId);
         _products.Add(product);
     }
 
@@ -53,6 +72,7 @@ public class MockProductRepository : IProductRepository
         var existing = _products.FirstOrDefault(p => p.Id == product.Id);
         if (existing != null)
         {
+            product.Category = _categoryRepository.GetById(product.CategoryId);
             var index = _products.IndexOf(existing);
             _products[index] = product;
         }

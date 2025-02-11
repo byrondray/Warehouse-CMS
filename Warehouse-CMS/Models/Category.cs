@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-public class Product
+public class Category
 {
     public int Id { get; set; }
 
@@ -10,12 +10,5 @@ public class Product
     [Required]
     public string Description { get; set; } = string.Empty;
 
-    [Required]
-    public decimal Price { get; set; }
-
-    [Required]
-    public int StockQuantity { get; set; }
-
-    public int CategoryId { get; set; }
-    public Category? Category { get; set; }
+    public List<Product> Products { get; set; } = new List<Product>();
 }

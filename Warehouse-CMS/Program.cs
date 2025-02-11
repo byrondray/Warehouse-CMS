@@ -24,6 +24,11 @@ builder
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddScoped<IProductRepository, MockProductRepository>();
+builder.Services.AddScoped<IProductRepository, MockProductRepository>();
+builder.Services.AddScoped<ICategoryRepository, MockCategoryRepository>();
+builder.Services.AddScoped<IOrderRepository, MockOrderRepository>();
+builder.Services.AddScoped<ISupplierRepository, MockSupplierRepository>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
 
 // builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 
