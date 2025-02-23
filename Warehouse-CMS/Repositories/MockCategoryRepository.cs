@@ -1,3 +1,5 @@
+using Warehouse_CMS.Models;
+
 namespace Warehouse_CMS.Repositories
 {
     public class MockCategoryRepository : ICategoryRepository

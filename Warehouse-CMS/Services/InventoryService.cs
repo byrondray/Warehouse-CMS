@@ -1,3 +1,4 @@
+using Warehouse_CMS.Models;
 using Warehouse_CMS.Repositories;
 
 public interface IInventoryService

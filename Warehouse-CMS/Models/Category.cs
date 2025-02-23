@@ -1,14 +1,17 @@
 using System.ComponentModel.DataAnnotations;
 
-public class Category
+namespace Warehouse_CMS.Models
 {
-    public int Id { get; set; }
+    public class Category
+    {
+        public int Id { get; set; }
 
-    [Required]
-    public string Name { get; set; } = string.Empty;
+        [Required]
+        public string Name { get; set; } = string.Empty;
 
-    [Required]
-    public string Description { get; set; } = string.Empty;
+        [Required]
+        public string Description { get; set; } = string.Empty;
 
-    public List<Product> Products { get; set; } = new List<Product>();
+        public List<Product> Products { get; set; } = new List<Product>();
+    }
 }

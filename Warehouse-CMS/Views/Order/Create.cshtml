@@ -1,0 +1,73 @@
+@model Warehouse_CMS.Models.Order
+
+<h2>Create New Order</h2>
+
+<form asp-action="Create">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="form-group">
+        <label asp-for="CustomerName" class="control-label"></label>
+        <input asp-for="CustomerName" class="form-control" />
+        <span asp-validation-for="CustomerName" class="text-danger"></span>
+    </div>
+
+    <div id="orderItems">
+        <h4>Order Items</h4>
+        <table class="table" id="itemsTable">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <button type="button" class="btn btn-secondary" onclick="addOrderItem()">Add Item</button>
+    </div>
+
+    <div class="form-group mt-3">
+        <input type="submit" value="Create Order" class="btn btn-primary" />
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    </div>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        let itemCount = 0;
+
+        function addOrderItem() {
+            const tbody = document.querySelector("#itemsTable tbody");
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                        <td>
+                            <select name="OrderItems[${itemCount}].ProductId" class="form-control" required>
+                                @foreach (var product in ViewBag.Products)
+                                {
+                                            <option value="@product.Id">@product.Name - Stock: @product.StockQuantity</option>
+                                }
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" name="OrderItems[${itemCount}].Quantity" class="form-control" min="1" required />
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="removeOrderItem(this)">Remove</button>
+                        </td>
+                    `;
+
+            tbody.appendChild(row);
+            itemCount++;
+        }
+
+        function removeOrderItem(button) {
+            button.closest("tr").remove();
+        }
+    </script>
+}

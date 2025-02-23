@@ -1,21 +1,24 @@
 using System.ComponentModel.DataAnnotations;
 
-public class Product
+namespace Warehouse_CMS.Models
 {
-    public int Id { get; set; }
+    public class Product
+    {
+        public int Id { get; set; }
 
-    [Required]
-    public string Name { get; set; } = string.Empty;
+        [Required]
+        public string Name { get; set; } = string.Empty;
 
-    [Required]
-    public string Description { get; set; } = string.Empty;
+        [Required]
+        public string Description { get; set; } = string.Empty;
 
-    [Required]
-    public decimal Price { get; set; }
+        [Required]
+        public decimal Price { get; set; }
 
-    [Required]
-    public int StockQuantity { get; set; }
+        [Required]
+        public int StockQuantity { get; set; }
 
-    public int CategoryId { get; set; }
-    public Category? Category { get; set; }
+        public int CategoryId { get; set; }
+        public Category? Category { get; set; }
+    }
 }

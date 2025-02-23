@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Warehouse_CMS.Models;
 using Warehouse_CMS.Repositories;
 using Warehouse_CMS.ViewModels;
 
