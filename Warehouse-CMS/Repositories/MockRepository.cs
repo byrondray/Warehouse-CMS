@@ -1,90 +1,128 @@
+using System.Collections.Generic;
+using System.Linq;
 using Warehouse_CMS.Models;
 using Warehouse_CMS.Repositories;
 
-public class MockProductRepository : IProductRepository
+namespace Warehouse_CMS.Repositories
 {
-    private List<Product> _products;
-    private readonly ICategoryRepository _categoryRepository;
-
-    public MockProductRepository(ICategoryRepository categoryRepository)
+    public class MockProductRepository : IProductRepository
     {
-        _categoryRepository = categoryRepository;
-        var electronicsCategory = new Category
-        {
-            Id = 1,
-            Name = "Electronics",
-            Description = "Electronic devices and accessories",
-        };
-        var furnitureCategory = new Category
-        {
-            Id = 2,
-            Name = "Furniture",
-            Description = "Office and home furniture",
-        };
+        private static List<Product> _products;
+        private readonly ICategoryRepository _categoryRepository;
 
-        _products = new List<Product>
+        public MockProductRepository(ICategoryRepository categoryRepository)
         {
-            new Product
+            _categoryRepository = categoryRepository;
+
+            if (_products == null)
             {
-                Id = 1,
-                Name = "Laptop",
-                Description = "High-end laptop",
-                Price = 999.99m,
-                StockQuantity = 10,
-                CategoryId = electronicsCategory.Id,
-                Category = electronicsCategory,
-            },
-            new Product
-            {
-                Id = 2,
-                Name = "Desk Chair",
-                Description = "Ergonomic office chair",
-                Price = 199.99m,
-                StockQuantity = 15,
-                CategoryId = furnitureCategory.Id,
-                Category = furnitureCategory,
-            },
-            new Product
-            {
-                Id = 3,
-                Name = "Monitor",
-                Description = "27-inch 4K monitor",
-                Price = 299.99m,
-                StockQuantity = 5,
-                CategoryId = electronicsCategory.Id,
-                Category = electronicsCategory,
-            },
-        };
-    }
+                var constructionCategory = _categoryRepository.GetById(1);
+                var toolsCategory = _categoryRepository.GetById(2);
 
-    public IEnumerable<Product> GetAll() => _products;
-
-    public Product GetById(int id) => _products.FirstOrDefault(p => p.Id == id);
-
-    public void Add(Product product)
-    {
-        product.Id = _products.Max(p => p.Id) + 1;
-        product.Category = _categoryRepository.GetById(product.CategoryId);
-        _products.Add(product);
-    }
-
-    public void Update(Product product)
-    {
-        var existing = _products.FirstOrDefault(p => p.Id == product.Id);
-        if (existing != null)
-        {
-            product.Category = _categoryRepository.GetById(product.CategoryId);
-            var index = _products.IndexOf(existing);
-            _products[index] = product;
+                _products = new List<Product>
+                {
+                    new Product
+                    {
+                        Id = 1,
+                        Name = "Drywall Sheet",
+                        Description = "4' x 8' standard drywall sheet, 1/2\" thickness",
+                        Price = 12.99m,
+                        StockQuantity = 250,
+                        CategoryId = constructionCategory.Id,
+                        Category = constructionCategory,
+                    },
+                    new Product
+                    {
+                        Id = 2,
+                        Name = "Hammer",
+                        Description = "16 oz. claw hammer with fiberglass handle",
+                        Price = 14.99m,
+                        StockQuantity = 75,
+                        CategoryId = toolsCategory.Id,
+                        Category = toolsCategory,
+                    },
+                    new Product
+                    {
+                        Id = 3,
+                        Name = "Concrete Mix",
+                        Description = "60 lb. ready-to-use concrete mix",
+                        Price = 6.50m,
+                        StockQuantity = 320,
+                        CategoryId = constructionCategory.Id,
+                        Category = constructionCategory,
+                    },
+                };
+            }
         }
-    }
 
-    public void Delete(int id)
-    {
-        var product = _products.FirstOrDefault(p => p.Id == id);
-        if (product != null)
+        public IEnumerable<Product> GetAll()
         {
-            _products.Remove(product);
+            System.Diagnostics.Debug.WriteLine($"Getting all products. Count: {_products.Count}");
+            return _products;
+        }
+
+        public Product GetById(int id)
+        {
+            var product = _products.FirstOrDefault(p => p.Id == id);
+            System.Diagnostics.Debug.WriteLine(
+                $"Getting product by id {id}: {(product != null ? product.Name : "Not found")}"
+            );
+            return product;
+        }
+
+        public void Add(Product product)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"Adding product: {product.Name}, Price: {product.Price}"
+            );
+
+            product.Id = _products.Max(p => p.Id) + 1;
+
+            product.Category = _categoryRepository.GetById(product.CategoryId);
+
+            _products.Add(product);
+
+            System.Diagnostics.Debug.WriteLine($"Product added. Total products: {_products.Count}");
+        }
+
+        public void Update(Product product)
+        {
+            System.Diagnostics.Debug.WriteLine($"Updating product: {product.Id} - {product.Name}");
+
+            var existing = _products.FirstOrDefault(p => p.Id == product.Id);
+            if (existing != null)
+            {
+                product.Category = _categoryRepository.GetById(product.CategoryId);
+
+                var index = _products.IndexOf(existing);
+                _products[index] = product;
+
+                System.Diagnostics.Debug.WriteLine($"Product updated successfully");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"Product with ID {product.Id} not found for update"
+                );
+            }
+        }
+
+        public void Delete(int id)
+        {
+            System.Diagnostics.Debug.WriteLine($"Deleting product: {id}");
+
+            var product = _products.FirstOrDefault(p => p.Id == id);
+            if (product != null)
+            {
+                _products.Remove(product);
+                System.Diagnostics.Debug.WriteLine(
+                    $"Product deleted. Remaining products: {_products.Count}"
+                );
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"Product with ID {id} not found for deletion");
+            }
         }
     }
 }
