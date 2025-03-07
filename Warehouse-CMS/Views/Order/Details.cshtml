@@ -11,10 +11,10 @@
         <dd class="col-sm-10">@Model.OrderDate.ToString("dd/MM/yyyy")</dd>
 
         <dt class="col-sm-2">Customer</dt>
-        <dd class="col-sm-10">@Model.CustomerName</dd>
+        <dd class="col-sm-10">@(Model.Customer?.Name ?? "N/A")</dd>
 
         <dt class="col-sm-2">Status</dt>
-        <dd class="col-sm-10">@Model.Status</dd>
+        <dd class="col-sm-10">@(Model.OrderStatus?.Status ?? "N/A")</dd>
 
         <dt class="col-sm-2">Total Amount</dt>
         <dd class="col-sm-10">@Model.TotalAmount.ToString("C")</dd>

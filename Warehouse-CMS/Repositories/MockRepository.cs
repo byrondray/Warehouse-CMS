@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Warehouse_CMS.Models;
-using Warehouse_CMS.Repositories;
 
 namespace Warehouse_CMS.Repositories
 {
@@ -9,15 +8,22 @@ namespace Warehouse_CMS.Repositories
     {
         private static List<Product> _products;
         private readonly ICategoryRepository _categoryRepository;
+        private readonly ISupplierRepository _supplierRepository;
 
-        public MockProductRepository(ICategoryRepository categoryRepository)
+        public MockProductRepository(
+            ICategoryRepository categoryRepository,
+            ISupplierRepository supplierRepository
+        )
         {
             _categoryRepository = categoryRepository;
+            _supplierRepository = supplierRepository;
 
             if (_products == null)
             {
                 var constructionCategory = _categoryRepository.GetById(1);
                 var toolsCategory = _categoryRepository.GetById(2);
+                var supplier1 = _supplierRepository.GetById(1);
+                var supplier2 = _supplierRepository.GetById(2);
 
                 _products = new List<Product>
                 {
@@ -30,6 +36,9 @@ namespace Warehouse_CMS.Repositories
                         StockQuantity = 250,
                         CategoryId = constructionCategory.Id,
                         Category = constructionCategory,
+                        SupplierId = supplier1.Id,
+                        Supplier = supplier1,
+                        OrderItems = new List<OrderItem>(),
                     },
                     new Product
                     {
@@ -40,6 +49,9 @@ namespace Warehouse_CMS.Repositories
                         StockQuantity = 75,
                         CategoryId = toolsCategory.Id,
                         Category = toolsCategory,
+                        SupplierId = supplier2.Id,
+                        Supplier = supplier2,
+                        OrderItems = new List<OrderItem>(),
                     },
                     new Product
                     {
@@ -50,6 +62,9 @@ namespace Warehouse_CMS.Repositories
                         StockQuantity = 320,
                         CategoryId = constructionCategory.Id,
                         Category = constructionCategory,
+                        SupplierId = supplier1.Id,
+                        Supplier = supplier1,
+                        OrderItems = new List<OrderItem>(),
                     },
                 };
             }
@@ -78,8 +93,26 @@ namespace Warehouse_CMS.Repositories
 
             product.Id = _products.Max(p => p.Id) + 1;
 
+            // Get related entities
             product.Category = _categoryRepository.GetById(product.CategoryId);
 
+            // If supplier ID is set, get the supplier
+            if (product.SupplierId > 0)
+            {
+                product.Supplier = _supplierRepository.GetById(product.SupplierId);
+            }
+            // If supplier ID is not set, use a default supplier
+            else
+            {
+                var supplier = _supplierRepository.GetAll().FirstOrDefault();
+                if (supplier != null)
+                {
+                    product.SupplierId = supplier.Id;
+                    product.Supplier = supplier;
+                }
+            }
+
+            product.OrderItems = new List<OrderItem>();
             _products.Add(product);
 
             System.Diagnostics.Debug.WriteLine($"Product added. Total products: {_products.Count}");
@@ -92,7 +125,24 @@ namespace Warehouse_CMS.Repositories
             var existing = _products.FirstOrDefault(p => p.Id == product.Id);
             if (existing != null)
             {
+                // Preserve existing relationships if not in the updated product
+                if (product.OrderItems == null)
+                {
+                    product.OrderItems = existing.OrderItems;
+                }
+
+                // Get related entities
                 product.Category = _categoryRepository.GetById(product.CategoryId);
+
+                if (product.SupplierId > 0)
+                {
+                    product.Supplier = _supplierRepository.GetById(product.SupplierId);
+                }
+                else if (existing.SupplierId > 0)
+                {
+                    product.SupplierId = existing.SupplierId;
+                    product.Supplier = existing.Supplier;
+                }
 
                 var index = _products.IndexOf(existing);
                 _products[index] = product;

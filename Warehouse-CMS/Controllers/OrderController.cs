@@ -11,14 +11,20 @@ namespace Warehouse_CMS.Controllers
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IProductRepository _productRepository;
+        private readonly ICustomerRepository _customerRepository;
+        private readonly IOrderStatusRepository _orderStatusRepository;
 
         public OrderController(
             IOrderRepository orderRepository,
-            IProductRepository productRepository
+            IProductRepository productRepository,
+            ICustomerRepository customerRepository,
+            IOrderStatusRepository orderStatusRepository
         )
         {
             _orderRepository = orderRepository;
             _productRepository = productRepository;
+            _customerRepository = customerRepository;
+            _orderStatusRepository = orderStatusRepository;
         }
 
         public IActionResult Index()
@@ -29,20 +35,33 @@ namespace Warehouse_CMS.Controllers
 
         public IActionResult Create()
         {
+            // Find or create a "Pending" status
+            var pendingStatus = _orderStatusRepository
+                .GetAll()
+                .FirstOrDefault(s => s.Status == "Pending");
+            if (pendingStatus == null)
+            {
+                pendingStatus = new OrderStatus { Status = "Pending" };
+                _orderStatusRepository.Add(pendingStatus);
+            }
+
             var order = new Order
             {
                 OrderDate = DateTime.Now,
-                Status = "Pending",
+                OrderStatusId = pendingStatus.Id,
+                OrderStatus = pendingStatus,
                 OrderItems = new List<OrderItem> { new OrderItem { Quantity = 1 } },
             };
 
             ViewBag.Products = _productRepository.GetAll();
+            ViewBag.Customers = _customerRepository.GetAll();
             return View(order);
         }
 
         [HttpPost]
         public IActionResult Create(
-            string CustomerName,
+            int CustomerId,
+            string CustomerName, // For backward compatibility
             List<int> productIds,
             List<int> quantities,
             string action,
@@ -50,18 +69,51 @@ namespace Warehouse_CMS.Controllers
         )
         {
             System.Diagnostics.Debug.WriteLine($"Action: {action}, RemoveIndex: {removeIndex}");
-            System.Diagnostics.Debug.WriteLine($"Customer: {CustomerName}");
+            System.Diagnostics.Debug.WriteLine(
+                $"Customer ID: {CustomerId}, Customer Name: {CustomerName}"
+            );
             System.Diagnostics.Debug.WriteLine(
                 $"Products: {productIds?.Count ?? 0}, Quantities: {quantities?.Count ?? 0}"
             );
 
+            // Find or create a "Pending" status
+            var pendingStatus = _orderStatusRepository
+                .GetAll()
+                .FirstOrDefault(s => s.Status == "Pending");
+            if (pendingStatus == null)
+            {
+                pendingStatus = new OrderStatus { Status = "Pending" };
+                _orderStatusRepository.Add(pendingStatus);
+            }
+
             var order = new Order
             {
-                CustomerName = CustomerName,
                 OrderDate = DateTime.Now,
-                Status = "Pending",
+                OrderStatusId = pendingStatus.Id,
+                OrderStatus = pendingStatus,
                 OrderItems = new List<OrderItem>(),
             };
+
+            // Handle customer - either use CustomerId if provided or look up/create by name
+            if (CustomerId > 0)
+            {
+                order.CustomerId = CustomerId;
+                order.Customer = _customerRepository.GetById(CustomerId);
+            }
+            else if (!string.IsNullOrWhiteSpace(CustomerName))
+            {
+                // Find or create a customer with this name
+                var customer = _customerRepository
+                    .GetAll()
+                    .FirstOrDefault(c => c.Name == CustomerName);
+                if (customer == null)
+                {
+                    customer = new Customer { Name = CustomerName, CreatedAt = DateTime.Now };
+                    _customerRepository.Add(customer);
+                }
+                order.CustomerId = customer.Id;
+                order.Customer = customer;
+            }
 
             if (productIds != null && quantities != null)
             {
@@ -87,6 +139,7 @@ namespace Warehouse_CMS.Controllers
             {
                 order.OrderItems.Add(new OrderItem { Quantity = 1 });
                 ViewBag.Products = _productRepository.GetAll();
+                ViewBag.Customers = _customerRepository.GetAll();
                 return View(order);
             }
 
@@ -104,13 +157,15 @@ namespace Warehouse_CMS.Controllers
                 }
 
                 ViewBag.Products = _productRepository.GetAll();
+                ViewBag.Customers = _customerRepository.GetAll();
                 return View(order);
             }
 
-            if (string.IsNullOrWhiteSpace(CustomerName))
+            if (order.CustomerId == 0)
             {
-                ModelState.AddModelError("CustomerName", "Customer name is required");
+                ModelState.AddModelError("CustomerId", "Customer is required");
                 ViewBag.Products = _productRepository.GetAll();
+                ViewBag.Customers = _customerRepository.GetAll();
                 return View(order);
             }
 
@@ -118,6 +173,7 @@ namespace Warehouse_CMS.Controllers
             {
                 ModelState.AddModelError("", "You must select a product for each item");
                 ViewBag.Products = _productRepository.GetAll();
+                ViewBag.Customers = _customerRepository.GetAll();
                 return View(order);
             }
 
@@ -130,6 +186,7 @@ namespace Warehouse_CMS.Controllers
                 {
                     ModelState.AddModelError("", $"Product with ID {item.ProductId} not found");
                     ViewBag.Products = _productRepository.GetAll();
+                    ViewBag.Customers = _customerRepository.GetAll();
                     return View(order);
                 }
 
@@ -137,6 +194,7 @@ namespace Warehouse_CMS.Controllers
                 {
                     ModelState.AddModelError("", $"Insufficient stock for product: {product.Name}");
                     ViewBag.Products = _productRepository.GetAll();
+                    ViewBag.Customers = _customerRepository.GetAll();
                     return View(order);
                 }
 

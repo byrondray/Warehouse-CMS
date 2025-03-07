@@ -15,6 +15,7 @@ var serverVersion = new MySqlServerVersion(new Version(8, 0, 21));
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, serverVersion)
 );
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder
@@ -24,11 +25,14 @@ builder
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddScoped<IProductRepository, MockProductRepository>();
-builder.Services.AddScoped<IProductRepository, MockProductRepository>();
 builder.Services.AddScoped<ICategoryRepository, MockCategoryRepository>();
 builder.Services.AddScoped<IOrderRepository, MockOrderRepository>();
 builder.Services.AddScoped<ISupplierRepository, MockSupplierRepository>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IEmployeeRepository, MockEmployeeRepository>();
+builder.Services.AddScoped<IEmployeeRoleRepository, MockEmployeeRoleRepository>();
+builder.Services.AddScoped<ICustomerRepository, MockCustomerRepository>();
+builder.Services.AddScoped<IOrderStatusRepository, MockOrderStatusRepository>();
 
 // builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 

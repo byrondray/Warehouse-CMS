@@ -8,19 +8,40 @@ namespace Warehouse_CMS.Repositories
     public class MockOrderRepository : IOrderRepository
     {
         private static List<Order> _orders;
+        private readonly ICustomerRepository _customerRepository;
+        private readonly IEmployeeRepository _employeeRepository;
+        private readonly IOrderStatusRepository _orderStatusRepository;
 
-        public MockOrderRepository()
+        public MockOrderRepository(
+            ICustomerRepository customerRepository,
+            IEmployeeRepository employeeRepository,
+            IOrderStatusRepository orderStatusRepository
+        )
         {
+            _customerRepository = customerRepository;
+            _employeeRepository = employeeRepository;
+            _orderStatusRepository = orderStatusRepository;
+
             if (_orders == null)
             {
+                var completedStatus = _orderStatusRepository.GetById(1); // Completed
+                var processingStatus = _orderStatusRepository.GetById(2); // Processing
+                var customer1 = _customerRepository.GetById(1); // John Doe
+                var customer2 = _customerRepository.GetById(2); // Jane Smith
+                var employee1 = _employeeRepository.GetById(1); // Sales Employee
+
                 _orders = new List<Order>
                 {
                     new Order
                     {
                         Id = 1,
                         OrderDate = DateTime.Now.AddDays(-5),
-                        CustomerName = "John Doe",
-                        Status = "Completed",
+                        CustomerId = customer1.Id,
+                        Customer = customer1,
+                        EmployeeId = employee1.Id,
+                        Employee = employee1,
+                        OrderStatusId = completedStatus.Id,
+                        OrderStatus = completedStatus,
                         OrderItems = new List<OrderItem>(),
                         TotalAmount = 1499.99m,
                     },
@@ -28,23 +49,16 @@ namespace Warehouse_CMS.Repositories
                     {
                         Id = 2,
                         OrderDate = DateTime.Now.AddDays(-2),
-                        CustomerName = "Jane Smith",
-                        Status = "Processing",
+                        CustomerId = customer2.Id,
+                        Customer = customer2,
+                        EmployeeId = employee1.Id,
+                        Employee = employee1,
+                        OrderStatusId = processingStatus.Id,
+                        OrderStatus = processingStatus,
                         OrderItems = new List<OrderItem>(),
                         TotalAmount = 299.99m,
                     },
                 };
-            }
-
-            // Debug - print out orders at initialization
-            System.Diagnostics.Debug.WriteLine(
-                $"Repository initialized with {_orders.Count} orders"
-            );
-            foreach (var order in _orders)
-            {
-                System.Diagnostics.Debug.WriteLine(
-                    $"Order: {order.Id}, Customer: {order.CustomerName}, Total: {order.TotalAmount}"
-                );
             }
         }
 
@@ -68,7 +82,7 @@ namespace Warehouse_CMS.Repositories
         public void Add(Order order)
         {
             System.Diagnostics.Debug.WriteLine(
-                $"Add() called with CustomerName: {order.CustomerName}, Items: {order.OrderItems?.Count ?? 0}"
+                $"Add() called for Order with {order.OrderItems?.Count ?? 0} items"
             );
 
             try
@@ -79,45 +93,112 @@ namespace Warehouse_CMS.Repositories
                 if (order.OrderItems == null)
                 {
                     order.OrderItems = new List<OrderItem>();
-                    System.Diagnostics.Debug.WriteLine(
-                        "Warning: OrderItems was null, initialized empty list"
-                    );
                 }
 
                 // Set OrderId on each OrderItem
                 foreach (var item in order.OrderItems)
                 {
                     item.OrderId = order.Id;
-                    System.Diagnostics.Debug.WriteLine(
-                        $"  Item: ProductId={item.ProductId}, Quantity={item.Quantity}, UnitPrice={item.UnitPrice}"
-                    );
+                }
+
+                // Handle customer based on the controller's approach
+                // For existing controllers that might be passing a "CustomerName" from a form
+                // We'll extract it from the request and find/create a customer
+                var customerNameFromRequest = GetCustomerNameFromRequest();
+                if (!string.IsNullOrEmpty(customerNameFromRequest))
+                {
+                    // Find or create a customer with this name
+                    var customer = _customerRepository
+                        .GetAll()
+                        .FirstOrDefault(c => c.Name == customerNameFromRequest);
+                    if (customer == null)
+                    {
+                        customer = new Customer
+                        {
+                            Name = customerNameFromRequest,
+                            CreatedAt = DateTime.Now,
+                        };
+                        _customerRepository.Add(customer);
+                    }
+                    order.CustomerId = customer.Id;
+                    order.Customer = customer;
+                }
+                else if (order.CustomerId > 0 && order.Customer == null)
+                {
+                    // If CustomerId is set but Customer is not, load the Customer
+                    order.Customer = _customerRepository.GetById(order.CustomerId);
+                }
+                else if (order.CustomerId == 0)
+                {
+                    // If no customer is specified, use a default one
+                    var customer = _customerRepository.GetAll().FirstOrDefault();
+                    if (customer != null)
+                    {
+                        order.CustomerId = customer.Id;
+                        order.Customer = customer;
+                    }
+                }
+
+                // Handle status based on the controller's approach
+                // For existing controllers that might be passing a "Status" from a form
+                var statusFromRequest = GetStatusFromRequest();
+                if (!string.IsNullOrEmpty(statusFromRequest))
+                {
+                    // Find or create an order status with this name
+                    var orderStatus = _orderStatusRepository
+                        .GetAll()
+                        .FirstOrDefault(s => s.Status == statusFromRequest);
+                    if (orderStatus == null)
+                    {
+                        orderStatus = new OrderStatus { Status = statusFromRequest };
+                        _orderStatusRepository.Add(orderStatus);
+                    }
+                    order.OrderStatusId = orderStatus.Id;
+                    order.OrderStatus = orderStatus;
+                }
+                else if (order.OrderStatusId > 0 && order.OrderStatus == null)
+                {
+                    // If OrderStatusId is set but OrderStatus is not, load the OrderStatus
+                    order.OrderStatus = _orderStatusRepository.GetById(order.OrderStatusId);
+                }
+                else if (order.OrderStatusId == 0)
+                {
+                    // If no status is specified, use "Pending" or the first available
+                    var orderStatus =
+                        _orderStatusRepository.GetAll().FirstOrDefault(s => s.Status == "Pending")
+                        ?? _orderStatusRepository.GetAll().FirstOrDefault();
+                    if (orderStatus != null)
+                    {
+                        order.OrderStatusId = orderStatus.Id;
+                        order.OrderStatus = orderStatus;
+                    }
+                }
+
+                // If no employee assigned, use the first employee
+                if (order.EmployeeId == 0)
+                {
+                    var employee = _employeeRepository.GetAll().FirstOrDefault();
+                    if (employee != null)
+                    {
+                        order.EmployeeId = employee.Id;
+                        order.Employee = employee;
+                    }
+                }
+                else if (order.Employee == null && order.EmployeeId > 0)
+                {
+                    order.Employee = _employeeRepository.GetById(order.EmployeeId);
                 }
 
                 _orders.Add(order);
                 System.Diagnostics.Debug.WriteLine(
                     $"Order added successfully. New count: {_orders.Count}"
                 );
-
-                // Verify after adding
-                var addedOrder = _orders.FirstOrDefault(o => o.Id == order.Id);
-                if (addedOrder != null)
-                {
-                    System.Diagnostics.Debug.WriteLine(
-                        $"Verification: Order {addedOrder.Id} exists in repository"
-                    );
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine(
-                        "ERROR: Failed to find added order in repository after add!"
-                    );
-                }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"ERROR in Add(): {ex.Message}");
                 System.Diagnostics.Debug.WriteLine(ex.StackTrace);
-                throw; // Re-throw to maintain original exception
+                throw;
             }
         }
 
@@ -130,6 +211,22 @@ namespace Warehouse_CMS.Repositories
                 var existing = _orders.FirstOrDefault(o => o.Id == order.Id);
                 if (existing != null)
                 {
+                    // Get related entities if not already set
+                    if (order.Customer == null && order.CustomerId > 0)
+                    {
+                        order.Customer = _customerRepository.GetById(order.CustomerId);
+                    }
+
+                    if (order.Employee == null && order.EmployeeId > 0)
+                    {
+                        order.Employee = _employeeRepository.GetById(order.EmployeeId);
+                    }
+
+                    if (order.OrderStatus == null && order.OrderStatusId > 0)
+                    {
+                        order.OrderStatus = _orderStatusRepository.GetById(order.OrderStatusId);
+                    }
+
                     var index = _orders.IndexOf(existing);
                     _orders[index] = order;
                     System.Diagnostics.Debug.WriteLine($"Order {order.Id} updated successfully");
@@ -145,7 +242,7 @@ namespace Warehouse_CMS.Repositories
             {
                 System.Diagnostics.Debug.WriteLine($"ERROR in Update(): {ex.Message}");
                 System.Diagnostics.Debug.WriteLine(ex.StackTrace);
-                throw; // Re-throw to maintain original exception
+                throw;
             }
         }
 
@@ -172,8 +269,26 @@ namespace Warehouse_CMS.Repositories
             {
                 System.Diagnostics.Debug.WriteLine($"ERROR in Delete(): {ex.Message}");
                 System.Diagnostics.Debug.WriteLine(ex.StackTrace);
-                throw; // Re-throw to maintain original exception
+                throw;
             }
+        }
+
+        // Helper methods to handle data from HTML forms in case your controller is still
+        // expecting CustomerName and Status as form fields
+        private string GetCustomerNameFromRequest()
+        {
+            // In a real implementation, you might access these from
+            // HttpContext.Current.Request.Form["CustomerName"]
+            // But for this mock repository, we'll return null
+            return null;
+        }
+
+        private string GetStatusFromRequest()
+        {
+            // In a real implementation, you might access these from
+            // HttpContext.Current.Request.Form["Status"]
+            // But for this mock repository, we'll return null
+            return null;
         }
     }
 }

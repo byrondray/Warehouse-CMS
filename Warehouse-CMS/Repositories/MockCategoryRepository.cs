@@ -19,18 +19,21 @@ namespace Warehouse_CMS.Repositories
                         Id = 1,
                         Name = "Construction Materials",
                         Description = "Building and construction materials",
+                        Products = new List<Product>(),
                     },
                     new Category
                     {
                         Id = 2,
                         Name = "Tools",
                         Description = "Construction and building tools",
+                        Products = new List<Product>(),
                     },
                     new Category
                     {
                         Id = 3,
                         Name = "Safety Equipment",
                         Description = "Protective gear and safety supplies",
+                        Products = new List<Product>(),
                     },
                 };
             }
@@ -56,7 +59,7 @@ namespace Warehouse_CMS.Repositories
         public void Add(Category category)
         {
             System.Diagnostics.Debug.WriteLine($"Adding category: {category.Name}");
-            category.Id = _categories.Max(c => c.Id) + 1;
+            category.Id = _categories.Any() ? _categories.Max(c => c.Id) + 1 : 1;
             _categories.Add(category);
             System.Diagnostics.Debug.WriteLine(
                 $"Category added. Total categories: {_categories.Count}"

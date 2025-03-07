@@ -40,6 +40,14 @@
         </div>
 
         <div class="mb-3">
+            <label asp-for="SupplierId" class="form-label">Supplier</label>
+            <select asp-for="SupplierId" asp-items="@Model.SupplierList" class="form-select">
+                <option value="">-- Select Supplier --</option>
+            </select>
+            <span asp-validation-for="SupplierId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
             <button type="submit" class="btn btn-primary">Save</button>
             <a asp-action="Index" class="btn btn-secondary">Back to List</a>
         </div>
