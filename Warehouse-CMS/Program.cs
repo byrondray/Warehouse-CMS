@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Identity;
-// using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation;
 using Microsoft.EntityFrameworkCore;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using Warehouse_CMS.Data;
 using Warehouse_CMS.Models;
 using Warehouse_CMS.Repositories;
+using Warehouse_CMS.Repositories.Implementation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,38 +11,69 @@ var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-var serverVersion = new MySqlServerVersion(new Version(8, 0, 21));
+// Configure MySQL with Pomelo provider
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(connectionString, serverVersion)
+    options.UseMySql(
+        connectionString,
+        ServerVersion.AutoDetect(connectionString),
+        mySqlOptions => mySqlOptions.EnableRetryOnFailure()
+    )
 );
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder
-    .Services.AddDefaultIdentity<IdentityUser>(options =>
-        options.SignIn.RequireConfirmedAccount = true
-    )
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+// Explicitly disable Identity services
+builder.Services.AddSingleton<Microsoft.AspNetCore.Identity.IUserStore<Microsoft.AspNetCore.Identity.IdentityUser>>(
+    provider => null
+);
+builder.Services.AddSingleton<Microsoft.AspNetCore.Identity.UserManager<Microsoft.AspNetCore.Identity.IdentityUser>>(
+    provider => null
+);
 
-builder.Services.AddScoped<IProductRepository, MockProductRepository>();
-builder.Services.AddScoped<ICategoryRepository, MockCategoryRepository>();
-builder.Services.AddScoped<IOrderRepository, MockOrderRepository>();
-builder.Services.AddScoped<ISupplierRepository, MockSupplierRepository>();
+builder.Services.AddRazorPages(options =>
+{
+    // Disable authentication requirements for Razor Pages
+    options.Conventions.AllowAnonymousToPage("/");
+});
+
+// Repository registrations
+builder.Services.AddScoped<ICategoryRepository, EfCategoryRepository>();
+builder.Services.AddScoped<ICustomerRepository, EfCustomerRepository>();
+builder.Services.AddScoped<IEmployeeRepository, EfEmployeeRepository>();
+builder.Services.AddScoped<IEmployeeRoleRepository, EfEmployeeRoleRepository>();
+builder.Services.AddScoped<IOrderRepository, EfOrderRepository>();
+builder.Services.AddScoped<IOrderItemRepository, EfOrderItemRepository>();
+builder.Services.AddScoped<IOrderStatusRepository, EfOrderStatusRepository>();
+builder.Services.AddScoped<IProductRepository, EfProductRepository>();
+builder.Services.AddScoped<ISupplierRepository, EfSupplierRepository>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
-builder.Services.AddScoped<IEmployeeRepository, MockEmployeeRepository>();
-builder.Services.AddScoped<IEmployeeRoleRepository, MockEmployeeRoleRepository>();
-builder.Services.AddScoped<ICustomerRepository, MockCustomerRepository>();
-builder.Services.AddScoped<IOrderStatusRepository, MockOrderStatusRepository>();
 
-// builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
-
-// builder.Services.Configure<RazorViewEngineOptions>(options =>
-// {
-//     // You can add custom view locations here if needed
-//     // options.ViewLocationFormats.Add("/CustomViews/{1}/{0}" + RazorViewEngine.ViewExtension);
-// });
+// Add controllers
+builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
+
+// Seed the database
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+
+        // Ensure database is created
+        dbContext.Database.EnsureCreated();
+
+        // Seed data
+        SeedDatabase.Seed(services);
+    }
+    catch (Exception ex)
+    {
+        // Log the error
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -52,7 +83,6 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -61,8 +91,9 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthentication();
-app.UseAuthorization();
+// Remove or comment out authentication middleware
+// app.UseAuthentication();
+// app.UseAuthorization();
 
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 
@@ -72,6 +103,14 @@ app.MapControllerRoute(
     defaults: new { controller = "Product" }
 );
 
+// Ensure Razor Pages are mapped
 app.MapRazorPages();
+
+// Ensure the database is created and migrations are applied
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    dbContext.Database.Migrate();
+}
 
 app.Run();

@@ -13,18 +13,21 @@ namespace Warehouse_CMS.Controllers
         private readonly IProductRepository _productRepository;
         private readonly ICustomerRepository _customerRepository;
         private readonly IOrderStatusRepository _orderStatusRepository;
+        private readonly IEmployeeRepository _employeeRepository;
 
         public OrderController(
             IOrderRepository orderRepository,
             IProductRepository productRepository,
             ICustomerRepository customerRepository,
-            IOrderStatusRepository orderStatusRepository
+            IOrderStatusRepository orderStatusRepository,
+            IEmployeeRepository employeeRepository
         )
         {
             _orderRepository = orderRepository;
             _productRepository = productRepository;
             _customerRepository = customerRepository;
             _orderStatusRepository = orderStatusRepository;
+            _employeeRepository = employeeRepository;
         }
 
         public IActionResult Index()
@@ -35,7 +38,6 @@ namespace Warehouse_CMS.Controllers
 
         public IActionResult Create()
         {
-            // Find or create a "Pending" status
             var pendingStatus = _orderStatusRepository
                 .GetAll()
                 .FirstOrDefault(s => s.Status == "Pending");
@@ -61,22 +63,16 @@ namespace Warehouse_CMS.Controllers
         [HttpPost]
         public IActionResult Create(
             int CustomerId,
-            string CustomerName, // For backward compatibility
+            string CustomerName,
             List<int> productIds,
             List<int> quantities,
             string action,
             int? removeIndex
         )
         {
-            System.Diagnostics.Debug.WriteLine($"Action: {action}, RemoveIndex: {removeIndex}");
-            System.Diagnostics.Debug.WriteLine(
-                $"Customer ID: {CustomerId}, Customer Name: {CustomerName}"
-            );
-            System.Diagnostics.Debug.WriteLine(
-                $"Products: {productIds?.Count ?? 0}, Quantities: {quantities?.Count ?? 0}"
-            );
+            // Hardcoded employee ID - replace with the ID of an employee in your database
+            int employeeId = 1; // Typically this would be the first employee or a specific employee you want to use
 
-            // Find or create a "Pending" status
             var pendingStatus = _orderStatusRepository
                 .GetAll()
                 .FirstOrDefault(s => s.Status == "Pending");
@@ -92,48 +88,32 @@ namespace Warehouse_CMS.Controllers
                 OrderStatusId = pendingStatus.Id,
                 OrderStatus = pendingStatus,
                 OrderItems = new List<OrderItem>(),
+
+                EmployeeId = employeeId,
+                Employee = _employeeRepository.GetById(employeeId),
             };
 
-            // Handle customer - either use CustomerId if provided or look up/create by name
+            Customer customer = null;
             if (CustomerId > 0)
             {
-                order.CustomerId = CustomerId;
-                order.Customer = _customerRepository.GetById(CustomerId);
+                customer = _customerRepository.GetById(CustomerId);
             }
             else if (!string.IsNullOrWhiteSpace(CustomerName))
             {
-                // Find or create a customer with this name
-                var customer = _customerRepository
-                    .GetAll()
-                    .FirstOrDefault(c => c.Name == CustomerName);
-                if (customer == null)
-                {
-                    customer = new Customer { Name = CustomerName, CreatedAt = DateTime.Now };
-                    _customerRepository.Add(customer);
-                }
-                order.CustomerId = customer.Id;
-                order.Customer = customer;
+                customer = new Customer { Name = CustomerName, CreatedAt = DateTime.Now };
+                _customerRepository.Add(customer);
             }
 
-            if (productIds != null && quantities != null)
+            if (customer == null)
             {
-                for (int i = 0; i < Math.Min(productIds.Count, quantities.Count); i++)
-                {
-                    if (productIds[i] > 0)
-                    {
-                        order.OrderItems.Add(
-                            new OrderItem { ProductId = productIds[i], Quantity = quantities[i] }
-                        );
-                    }
-                }
+                ModelState.AddModelError("", "A customer must be selected or created");
+                ViewBag.Products = _productRepository.GetAll();
+                ViewBag.Customers = _customerRepository.GetAll();
+                return View(order);
             }
 
-            foreach (var item in order.OrderItems)
-            {
-                System.Diagnostics.Debug.WriteLine(
-                    $"Item - ProductId: {item.ProductId}, Quantity: {item.Quantity}"
-                );
-            }
+            order.CustomerId = customer.Id;
+            order.Customer = customer;
 
             if (action == "addItem")
             {
@@ -161,12 +141,17 @@ namespace Warehouse_CMS.Controllers
                 return View(order);
             }
 
-            if (order.CustomerId == 0)
+            if (productIds != null && quantities != null)
             {
-                ModelState.AddModelError("CustomerId", "Customer is required");
-                ViewBag.Products = _productRepository.GetAll();
-                ViewBag.Customers = _customerRepository.GetAll();
-                return View(order);
+                for (int i = 0; i < Math.Min(productIds.Count, quantities.Count); i++)
+                {
+                    if (productIds[i] > 0)
+                    {
+                        order.OrderItems.Add(
+                            new OrderItem { ProductId = productIds[i], Quantity = quantities[i] }
+                        );
+                    }
+                }
             }
 
             if (!order.OrderItems.Any() || order.OrderItems.Any(i => i.ProductId <= 0))
@@ -178,7 +163,6 @@ namespace Warehouse_CMS.Controllers
             }
 
             decimal totalAmount = 0;
-
             foreach (var item in order.OrderItems)
             {
                 var product = _productRepository.GetById(item.ProductId);

@@ -1,18 +1,18 @@
-using System;
+// EfCoreRepository.cs
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Warehouse_CMS.Data;
 
-namespace Warehouse_CMS.Repositories
+namespace Warehouse_CMS.Repositories.Implementation
 {
-    public class EfRepository<T> : IRepository<T>
+    public class EfCoreRepository<T>
         where T : class
     {
         protected readonly ApplicationDbContext _context;
         protected readonly DbSet<T> _dbSet;
 
-        public EfRepository(ApplicationDbContext context)
+        public EfCoreRepository(ApplicationDbContext context)
         {
             _context = context;
             _dbSet = context.Set<T>();
@@ -36,7 +36,7 @@ namespace Warehouse_CMS.Repositories
 
         public virtual void Update(T entity)
         {
-            _context.Entry(entity).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            _context.Entry(entity).State = EntityState.Modified;
             _context.SaveChanges();
         }
 
