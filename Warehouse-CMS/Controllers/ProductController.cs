@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Warehouse_CMS.Models;
@@ -7,6 +7,7 @@ using Warehouse_CMS.ViewModels;
 
 namespace Warehouse_CMS.Controllers
 {
+    [Authorize]
     public class ProductController : Controller
     {
         private readonly IProductRepository _repository;

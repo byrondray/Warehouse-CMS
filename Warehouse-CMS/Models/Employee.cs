@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Identity;
 
 namespace Warehouse_CMS.Models
 {
@@ -16,5 +18,10 @@ namespace Warehouse_CMS.Models
         public EmployeeRole? EmployeeRole { get; set; }
 
         public List<Order> Orders { get; set; } = new List<Order>();
+
+        public string? UserId { get; set; }
+
+        [ForeignKey("UserId")]
+        public virtual IdentityUser? User { get; set; }
     }
 }

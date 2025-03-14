@@ -1,9 +1,10 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
-using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using Warehouse_CMS.Data;
-using Warehouse_CMS.Models;
 using Warehouse_CMS.Repositories;
 using Warehouse_CMS.Repositories.Implementation;
+using Warehouse_CMS.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,7 +12,7 @@ var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-// Configure MySQL with Pomelo provider
+// Database context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(
         connectionString,
@@ -22,18 +23,32 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-// Explicitly disable Identity services
-builder.Services.AddSingleton<Microsoft.AspNetCore.Identity.IUserStore<Microsoft.AspNetCore.Identity.IdentityUser>>(
-    provider => null
-);
-builder.Services.AddSingleton<Microsoft.AspNetCore.Identity.UserManager<Microsoft.AspNetCore.Identity.IdentityUser>>(
-    provider => null
-);
+// Register email sender BEFORE Identity
+builder.Services.AddTransient<IEmailSender, DummyEmailSender>();
 
-builder.Services.AddRazorPages(options =>
+// ONLY ONE Identity configuration - not multiple!
+builder
+    .Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+    {
+        options.SignIn.RequireConfirmedAccount = false;
+        options.Password.RequireDigit = true;
+        options.Password.RequiredLength = 6;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireLowercase = true;
+    })
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders()
+    .AddDefaultUI(); // Add this to automatically add the default UI
+
+// Cookie configuration
+builder.Services.ConfigureApplicationCookie(options =>
 {
-    // Disable authentication requirements for Razor Pages
-    options.Conventions.AllowAnonymousToPage("/");
+    options.LoginPath = "/Identity/Account/Login";
+    options.LogoutPath = "/Identity/Account/Logout";
+    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+    options.SlidingExpiration = true;
+    options.ExpireTimeSpan = TimeSpan.FromHours(1);
 });
 
 // Repository registrations
@@ -48,34 +63,31 @@ builder.Services.AddScoped<IProductRepository, EfProductRepository>();
 builder.Services.AddScoped<ISupplierRepository, EfSupplierRepository>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 
-// Add controllers
+// Add controllers and Razor pages
 builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
-// Seed the database
+// Seed database
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
-
-        // Ensure database is created
         dbContext.Database.EnsureCreated();
 
-        // Seed data
         SeedDatabase.Seed(services);
     }
     catch (Exception ex)
     {
-        // Log the error
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while seeding the database.");
     }
 }
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -91,10 +103,11 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Remove or comment out authentication middleware
-// app.UseAuthentication();
-// app.UseAuthorization();
+// Authentication and authorization middleware
+app.UseAuthentication();
+app.UseAuthorization();
 
+// Route configuration
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.MapControllerRoute(
@@ -103,14 +116,6 @@ app.MapControllerRoute(
     defaults: new { controller = "Product" }
 );
 
-// Ensure Razor Pages are mapped
 app.MapRazorPages();
-
-// Ensure the database is created and migrations are applied
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.Migrate();
-}
 
 app.Run();

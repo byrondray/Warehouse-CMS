@@ -1,12 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Warehouse_CMS.Models;
 using Warehouse_CMS.Repositories;
 
 namespace Warehouse_CMS.Controllers
 {
+    [Authorize]
     public class OrderController : Controller
     {
         private readonly IOrderRepository _orderRepository;

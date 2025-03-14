@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Warehouse_CMS.Data;
 using Warehouse_CMS.Models;

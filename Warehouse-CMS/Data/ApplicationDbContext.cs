@@ -1,9 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Warehouse_CMS.Models;
 
 namespace Warehouse_CMS.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options) { }
@@ -20,56 +21,50 @@ namespace Warehouse_CMS.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Configure one-to-many relationship between Category and Product
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder
                 .Entity<Product>()
                 .HasOne(p => p.Category)
                 .WithMany(c => c.Products)
                 .HasForeignKey(p => p.CategoryId);
 
-            // Configure one-to-many relationship between Supplier and Product
             modelBuilder
                 .Entity<Product>()
                 .HasOne(p => p.Supplier)
                 .WithMany(s => s.Products)
                 .HasForeignKey(p => p.SupplierId);
 
-            // Configure one-to-many relationship between EmployeeRole and Employee
             modelBuilder
                 .Entity<Employee>()
                 .HasOne(e => e.EmployeeRole)
                 .WithMany(r => r.Employees)
                 .HasForeignKey(e => e.EmployeeRoleId);
 
-            // Configure one-to-many relationship between Customer and Order
             modelBuilder
                 .Entity<Order>()
                 .HasOne(o => o.Customer)
                 .WithMany(c => c.Orders)
                 .HasForeignKey(o => o.CustomerId);
 
-            // Configure one-to-many relationship between Employee and Order
             modelBuilder
                 .Entity<Order>()
                 .HasOne(o => o.Employee)
                 .WithMany(e => e.Orders)
                 .HasForeignKey(o => o.EmployeeId);
 
-            // Configure one-to-many relationship between OrderStatus and Order
             modelBuilder
                 .Entity<Order>()
                 .HasOne(o => o.OrderStatus)
                 .WithMany(s => s.Orders)
                 .HasForeignKey(o => o.OrderStatusId);
 
-            // Configure one-to-many relationship between Order and OrderItem
             modelBuilder
                 .Entity<OrderItem>()
                 .HasOne(i => i.Order)
                 .WithMany(o => o.OrderItems)
                 .HasForeignKey(i => i.OrderId);
 
-            // Configure one-to-many relationship between Product and OrderItem
             modelBuilder
                 .Entity<OrderItem>()
                 .HasOne(i => i.Product)
