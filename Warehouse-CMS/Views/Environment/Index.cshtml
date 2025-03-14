@@ -1,0 +1,118 @@
+@model EnvironmentViewModel
+@{
+    ViewData["Title"] = "Environment Information";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h2>Environment Information</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h4>Current Environment: <span class="badge bg-primary">@Model.EnvironmentName</span></h4>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Environment Details</h5>
+                            <table class="table table-striped">
+                                <tbody>
+                                    <tr>
+                                        <th>Is Development:</th>
+                                        <td><span
+                                                class="badge @(Model.IsDevelopment ? "bg-success" : "bg-secondary")">@Model.IsDevelopment</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Is Staging:</th>
+                                        <td><span
+                                                class="badge @(Model.IsStaging ? "bg-success" : "bg-secondary")">@Model.IsStaging</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Is Production:</th>
+                                        <td><span
+                                                class="badge @(Model.IsProduction ? "bg-success" : "bg-secondary")">@Model.IsProduction</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Is Testing:</th>
+                                        <td><span
+                                                class="badge @(Model.IsTesting ? "bg-success" : "bg-secondary")">@Model.IsTesting</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Application Name:</th>
+                                        <td>@Model.ApplicationName</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Application Settings (Environment-Specific)</h5>
+                            <table class="table table-striped">
+                                <tbody>
+                                    <tr>
+                                        <th>Site Name:</th>
+                                        <td>@Model.Settings.SiteName</td>
+                                    </tr>
+                                    <tr>
+                                        <th>API Endpoint:</th>
+                                        <td>@Model.Settings.ApiEndpoint</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Cache Timeout:</th>
+                                        <td>@Model.Settings.CacheTimeout seconds</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Analytics Enabled:</th>
+                                        <td><span
+                                                class="badge @(Model.Settings.EnableFeatures.Analytics ? "bg-success" : "bg-secondary")">@Model.Settings.EnableFeatures.Analytics</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Experimental Features:</th>
+                                        <td><span
+                                                class="badge @(Model.Settings.EnableFeatures.ExperimentalFeatures ? "bg-success" : "bg-secondary")">@Model.Settings.EnableFeatures.ExperimentalFeatures</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Detailed Logging:</th>
+                                        <td><span
+                                                class="badge @(Model.Settings.EnableFeatures.DetailedLogging ? "bg-success" : "bg-secondary")">@Model.Settings.EnableFeatures.DetailedLogging</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5>Environment Features Demonstration</h5>
+                            <div class="list-group">
+                                <a asp-controller="Environment" asp-action="Error"
+                                    class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">Error Handling</h5>
+                                    </div>
+                                    <p class="mb-1">Demonstrates different error handling based on environment.</p>
+                                </a>
+                                <a asp-controller="Environment" asp-action="ClientLibraries"
+                                    class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">Client-Side Libraries</h5>
+                                    </div>
+                                    <p class="mb-1">Shows environment-specific client library management.</p>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
