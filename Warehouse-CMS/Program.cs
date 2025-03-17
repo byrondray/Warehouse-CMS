@@ -9,7 +9,6 @@ using Warehouse_CMS.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Output current environment name for debugging
 var environment = builder.Environment.EnvironmentName;
 Console.WriteLine($"Current environment: {environment}");
 
@@ -17,12 +16,10 @@ var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-// Configure database with environment-specific settings
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
     {
-        // In development/testing, enable detailed errors and sensitive data logging
         options
             .UseMySql(
                 connectionString,
@@ -33,7 +30,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     }
     else
     {
-        // In staging/production, disable detailed errors for security
         options.UseMySql(
             connectionString,
             ServerVersion.AutoDetect(connectionString),
@@ -44,25 +40,19 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-// Register email sender BEFORE Identity
 builder.Services.AddTransient<IEmailSender, DummyEmailSender>();
 
-// Configure and register application settings from appsettings.json
 builder.Services.Configure<ApplicationSettings>(
     builder.Configuration.GetSection("ApplicationSettings")
 );
 
-// Identity configuration with environment-specific options
 builder
     .Services.AddIdentity<IdentityUser, IdentityRole>(options =>
     {
-        // Base settings
         options.SignIn.RequireConfirmedAccount = false;
 
-        // Environment-specific password requirements
         if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
         {
-            // Simpler passwords for development/testing
             options.Password.RequireDigit = false;
             options.Password.RequiredLength = 4;
             options.Password.RequireNonAlphanumeric = false;
@@ -71,7 +61,6 @@ builder
         }
         else
         {
-            // Stricter passwords for staging/production
             options.Password.RequireDigit = true;
             options.Password.RequiredLength = 6;
             options.Password.RequireNonAlphanumeric = false;
@@ -83,7 +72,6 @@ builder
     .AddDefaultTokenProviders()
     .AddDefaultUI();
 
-// Cookie configuration with environment-specific timeouts
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Identity/Account/Login";
@@ -91,25 +79,20 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Identity/Account/AccessDenied";
     options.SlidingExpiration = true;
 
-    // Environment-specific cookie settings
     if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
     {
-        // Short expiration for testing
         options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
     }
     else if (builder.Environment.IsStaging())
     {
-        // Medium expiration for staging
         options.ExpireTimeSpan = TimeSpan.FromHours(2);
     }
     else
     {
-        // Longer expiration for production
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
     }
 });
 
-// Repository registrations
 builder.Services.AddScoped<ICategoryRepository, EfCategoryRepository>();
 builder.Services.AddScoped<ICustomerRepository, EfCustomerRepository>();
 builder.Services.AddScoped<IEmployeeRepository, EfEmployeeRepository>();
@@ -121,13 +104,11 @@ builder.Services.AddScoped<IProductRepository, EfProductRepository>();
 builder.Services.AddScoped<ISupplierRepository, EfSupplierRepository>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 
-// Add controllers and Razor pages
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
-// Seed database
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -145,24 +126,23 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Configure the HTTP request pipeline with environment-specific middleware
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
 {
-    // Development/Testing specific error handling
     app.UseDeveloperExceptionPage();
     app.UseMigrationsEndPoint();
+    app.UseStatusCodePagesWithReExecute("/Home/StatusCode", "?statusCode={0}");
 }
 else if (app.Environment.IsStaging())
 {
-    // Staging might use a custom error page with some details
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
+    app.UseStatusCodePagesWithReExecute("/Home/StatusCode", "?statusCode={0}");
 }
 else
 {
-    // Production uses the most generic error page
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
+    app.UseStatusCodePagesWithReExecute("/Home/StatusCode", "?statusCode={0}");
 }
 
 app.UseHttpsRedirection();
@@ -170,11 +150,9 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Authentication and authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Route configuration
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.MapControllerRoute(
@@ -183,7 +161,6 @@ app.MapControllerRoute(
     defaults: new { controller = "Product" }
 );
 
-// Add a route for environment demonstration
 app.MapControllerRoute(
     name: "environment",
     pattern: "environment/{action=Index}/{id?}",

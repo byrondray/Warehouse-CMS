@@ -80,5 +80,107 @@ namespace Warehouse_CMS.Controllers
                 );
             }
         }
+
+        public IActionResult ClientLibraries()
+        {
+            // Create a view model to pass environment-specific configuration
+            var viewModel = new ClientLibrariesViewModel
+            {
+                EnvironmentName = _environment.EnvironmentName,
+                IsDevelopment = _environment.IsDevelopment(),
+                IsStaging = _environment.IsStaging(),
+                IsProduction = _environment.IsProduction(),
+                IsTesting = _environment.IsEnvironment("Testing"),
+
+                // Environment-specific JavaScript settings
+                JsConfig = new ClientJsConfig
+                {
+                    // In development/testing, use unminified libraries with source maps
+                    UseMinifiedLibraries = !(
+                        _environment.IsDevelopment() || _environment.IsEnvironment("Testing")
+                    ),
+
+                    // Debug mode only in development/testing
+                    EnableDebugMode =
+                        _environment.IsDevelopment() || _environment.IsEnvironment("Testing"),
+
+                    // Detailed logging only in development/testing
+                    LogLevel =
+                        _environment.IsDevelopment() || _environment.IsEnvironment("Testing")
+                            ? "debug"
+                            : (_environment.IsStaging() ? "warn" : "error"),
+
+                    // Error reporting endpoint - could be different per environment
+                    ErrorReportingEndpoint =
+                        _configuration["ErrorReporting:Endpoint"] ?? "/api/error-reporting",
+
+                    // Environment name to pass to client scripts
+                    EnvironmentName = _environment.EnvironmentName,
+                },
+            };
+
+            return View(viewModel);
+        }
+
+        [ApiController]
+        [Route("api/error-reporting")]
+        public class ErrorReportingController : ControllerBase
+        {
+            private readonly ILogger<ErrorReportingController> _logger;
+            private readonly IWebHostEnvironment _environment;
+
+            public ErrorReportingController(
+                ILogger<ErrorReportingController> logger,
+                IWebHostEnvironment environment
+            )
+            {
+                _logger = logger;
+                _environment = environment;
+            }
+
+            [HttpPost]
+            public IActionResult ReportError([FromBody] ClientErrorReport errorReport)
+            {
+                // Don't log as error in development environment to avoid filling logs
+                if (_environment.IsDevelopment() || _environment.IsEnvironment("Testing"))
+                {
+                    _logger.LogInformation(
+                        "Client error reported (Development): {ErrorType} - {ErrorMessage}",
+                        errorReport.Type,
+                        errorReport.Message
+                    );
+                }
+                else
+                {
+                    // In production, log as an actual error
+                    _logger.LogError(
+                        "Client error reported: {ErrorType} - {ErrorMessage} - URL: {Url}",
+                        errorReport.Type,
+                        errorReport.Message,
+                        errorReport.Url
+                    );
+
+                    // In a real app, you could save this to a database, send to an error tracking service, etc.
+                }
+
+                return Ok();
+            }
+        }
+
+        public IActionResult StatusCode(int statusCode)
+        {
+            if (statusCode == 404)
+            {
+                return View("NotFound");
+            }
+
+            return View(
+                "Error",
+                new ErrorViewModel
+                {
+                    RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                }
+            );
+        }
     }
 }

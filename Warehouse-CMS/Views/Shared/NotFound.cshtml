@@ -1,0 +1,26 @@
+@{
+    ViewData["Title"] = "Page Not Found";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-warning shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h2 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Page Not Found</h2>
+                </div>
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <span style="font-size: 6rem; color: #ffc107;">404</span>
+                    </div>
+                    <h3 class="mb-3">Oops! We couldn't find that page</h3>
+                    <p class="mb-4">The page you're looking for might have been removed, had its name changed, or is temporarily unavailable.</p>
+                    
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-primary btn-lg mt-3">
+                        <i class="fas fa-home me-2"></i>Return to Home Page
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -80,5 +80,21 @@ namespace Warehouse_CMS.Controllers
                 }
             );
         }
+
+        public IActionResult StatusCode(int statusCode)
+        {
+            if (statusCode == 404)
+            {
+                return View("NotFound");
+            }
+
+            return View(
+                "Error",
+                new ErrorViewModel
+                {
+                    RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                }
+            );
+        }
     }
 }

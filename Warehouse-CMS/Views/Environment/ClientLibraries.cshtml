@@ -1,0 +1,221 @@
+@model ClientLibrariesViewModel
+@{
+    ViewData["Title"] = "Client-Side Libraries";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2>Client-Side Libraries</h2>
+                        @if (!Model.IsDevelopment && !Model.IsTesting)
+                        {
+                                    <a asp-controller="Home" asp-action="Index" class="btn btn-light">Back to Home</a>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h4>Current Environment: <span class="badge bg-primary">@Model.EnvironmentName</span></h4>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>JavaScript Configuration</h5>
+                            <table class="table table-striped">
+                                <tbody>
+                                    <tr>
+                                        <th>Using Minified Libraries:</th>
+                                        <td><span
+                                                class="badge @(Model.JsConfig.UseMinifiedLibraries ? "bg-success" : "bg-secondary")">@Model.JsConfig.UseMinifiedLibraries</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Debug Mode:</th>
+                                        <td><span
+                                                class="badge @(Model.JsConfig.EnableDebugMode ? "bg-success" : "bg-secondary")">@Model.JsConfig.EnableDebugMode</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Log Level:</th>
+                                        <td>@Model.JsConfig.LogLevel</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Error Reporting Endpoint:</th>
+                                        <td>@Model.JsConfig.ErrorReportingEndpoint</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Environment-Specific Libraries</h5>
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <strong>jQuery:</strong> @(Model.JsConfig.UseMinifiedLibraries ? "jquery.min.js" :
+                                    "jquery.js")
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Bootstrap:</strong> @(Model.JsConfig.UseMinifiedLibraries ?
+                                                                                                                                                                                                                                                                                                "bootstrap.min.js" : "bootstrap.js")
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Custom Scripts:</strong> @(Model.JsConfig.UseMinifiedLibraries ?
+                                                                                                                                                                                                                                                                                                "app.min.js" : "app.js")
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <h5>Error Handling Demo</h5>
+                            <div class="card">
+                                <div class="card-body">
+                                    <p>The buttons below will trigger different types of JavaScript errors to
+                                        demonstrate environment-specific error handling:</p>
+
+                                    <div class="mb-3">
+                                        <button id="triggerSyntaxError" class="btn btn-outline-danger">Trigger Syntax
+                                            Error</button>
+                                        <button id="triggerReferenceError" class="btn btn-outline-danger">Trigger
+                                            Reference Error</button>
+                                        <button id="triggerTypeError" class="btn btn-outline-danger">Trigger Type
+                                            Error</button>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <button id="triggerPromiseRejection" class="btn btn-outline-warning">Trigger
+                                            Promise Rejection</button>
+                                        <button id="triggerFetchError" class="btn btn-outline-warning">Trigger Fetch
+                                            Error</button>
+                                    </div>
+
+                                    <div class="alert alert-secondary mt-3" id="errorDemoOutput">
+                                        <p>Error output will appear here</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (!Model.IsDevelopment && !Model.IsTesting)
+                {
+                            <div class="card-footer">
+                                <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Back to Home</a>
+                            </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+            <!-- Set up environment configuration for client scripts -->
+            <script>
+                // Create a global config object for our client-side scripts
+                window.APP_ENVIRONMENT = "@Model.EnvironmentName";
+                window.APP_CONFIG = {
+                    debugMode: @Json.Serialize(Model.JsConfig.EnableDebugMode),
+                    logLevel: "@Model.JsConfig.LogLevel",
+                    errorReportingEndpoint: "@Model.JsConfig.ErrorReportingEndpoint"
+                };
+            </script>
+
+            <!-- Include the error handler script -->
+            <script src="~/js/app-error-handler.js"></script>
+
+            <!-- Demo script for error handling -->
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const outputDiv = document.getElementById('errorDemoOutput');
+
+                    // Initialize error handler with our config
+                    if (window.AppErrorHandler) {
+                        AppErrorHandler.setConfig({
+                            logLevel: window.APP_CONFIG.logLevel,
+                            reportToServer: true,
+                            showUserFriendlyMessages: true,
+                            errorReportingEndpoint: window.APP_CONFIG.errorReportingEndpoint,
+                            developmentMode: window.APP_CONFIG.debugMode
+                        });
+
+                        outputDiv.innerHTML = `<p>Error handler initialized in <strong>${window.APP_ENVIRONMENT}</strong> mode</p>`;
+                    }
+
+                    // Helper to safely log errors in our demo UI
+                    function logErrorToUI(errorType, errorText) {
+                        const errorMsg = document.createElement('div');
+                        errorMsg.className = 'text-danger mt-2';
+                        errorMsg.innerHTML = `<strong>${errorType}:</strong> ${errorText}`;
+                        outputDiv.appendChild(errorMsg);
+
+                        console.log(`Demo triggered: ${errorType}`);
+                    }
+
+                    // Set up error buttons
+                    document.getElementById('triggerSyntaxError').addEventListener('click', function () {
+                        try {
+                            eval('function() { var x = y +');
+                        } catch (error) {
+                            logErrorToUI('Syntax Error', error.message);
+                            throw error; // Re-throw to trigger global handler
+                        }
+                    });
+
+                    document.getElementById('triggerReferenceError').addEventListener('click', function () {
+                        try {
+                            // This will cause a reference error
+                            const total = undefinedVariable + 5;
+                        } catch (error) {
+                            logErrorToUI('Reference Error', error.message);
+                            throw error; // Re-throw to trigger global handler
+                        }
+                    });
+
+                    document.getElementById('triggerTypeError').addEventListener('click', function () {
+                        try {
+                            // This will cause a type error
+                            const str = "Hello";
+                            str.map(char => char.toUpperCase());
+                        } catch (error) {
+                            logErrorToUI('Type Error', error.message);
+                            throw error; // Re-throw to trigger global handler
+                        }
+                    });
+
+                    document.getElementById('triggerPromiseRejection').addEventListener('click', function () {
+                        logErrorToUI('Promise Rejection', 'Triggering promise rejection...');
+
+                        // Create a rejected promise
+                        new Promise((resolve, reject) => {
+                            setTimeout(() => {
+                                reject(new Error('Demo promise rejection'));
+                            }, 100);
+                        }).catch(error => {
+                            // This catch won't prevent the unhandled rejection
+                            setTimeout(() => {
+                                throw error; // Re-throw after a timeout to simulate unhandled
+                            }, 0);
+                        });
+                    });
+
+                    document.getElementById('triggerFetchError').addEventListener('click', function () {
+                        logErrorToUI('Fetch Error', 'Triggering fetch error...');
+
+                        // Try to fetch a non-existent resource
+                        fetch('/this-resource-does-not-exist-' + Date.now()).then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! Status: ${response.status}`);
+                            }
+                            return response.json();
+                        }).catch(error => {
+                            logErrorToUI('Fetch Caught', error.message);
+                            // The global handler will also log this
+                        });
+                    });
+                });
+            </script>
+}
