@@ -56,46 +56,28 @@ namespace Warehouse_CMS.Controllers
             // This simulates an error for demonstration purposes
             try
             {
-                // Simulate environment-specific error behavior
-                if (_environment.IsDevelopment() || _environment.IsEnvironment("Testing"))
-                {
-                    // In development, we'll throw a more specific exception with details
-                    throw new InvalidOperationException(
-                        "This is a detailed development-only exception message"
-                    );
-                }
-                else
-                {
-                    // In staging/production, we'll throw a generic exception
-                    throw new Exception("An error occurred");
-                }
+                // Simulate an error (same for all environments)
+                throw new Exception("An error occurred");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred in the EnvironmentController");
 
-                // Return different error views based on environment
+                // In Development/Testing, let the built-in developer exception page handle it
                 if (_environment.IsDevelopment() || _environment.IsEnvironment("Testing"))
                 {
-                    return View(
-                        "DevelopmentError",
-                        new ErrorViewModel
-                        {
-                            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
-                            Exception = ex,
-                        }
-                    );
+                    // This will re-throw the exception, allowing the developer exception page middleware to catch it
+                    throw;
                 }
-                else
-                {
-                    return View(
-                        "Error",
-                        new ErrorViewModel
-                        {
-                            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
-                        }
-                    );
-                }
+
+                // For other environments (Production/Staging), use our custom error page
+                return View(
+                    "Error",
+                    new ErrorViewModel
+                    {
+                        RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                    }
+                );
             }
         }
     }

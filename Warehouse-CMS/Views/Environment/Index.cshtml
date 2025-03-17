@@ -8,7 +8,13 @@
         <div class="col-12">
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h2>Environment Information</h2>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2>Environment Information</h2>
+                        @if (!Model.IsDevelopment && !Model.IsTesting)
+                        {
+                            <a asp-controller="Home" asp-action="Index" class="btn btn-light">Back to Home</a>
+                        }
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-info">
@@ -112,6 +118,13 @@
                         </div>
                     </div>
                 </div>
+
+                @if (!Model.IsDevelopment && !Model.IsTesting)
+                {
+                    <div class="card-footer">
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Back to Home</a>
+                    </div>
+                }
             </div>
         </div>
     </div>
