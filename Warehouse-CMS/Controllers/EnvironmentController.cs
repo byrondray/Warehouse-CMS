@@ -27,14 +27,12 @@ namespace Warehouse_CMS.Controllers
 
         public IActionResult Index()
         {
-            // Log different levels to demonstrate environment-specific logging
             _logger.LogTrace("This is a trace log message");
             _logger.LogDebug("This is a debug log message");
             _logger.LogInformation("This is an information log message");
             _logger.LogWarning("This is a warning log message");
             _logger.LogError("This is an error log message");
 
-            // Prepare view model with environment information
             var viewModel = new EnvironmentViewModel
             {
                 EnvironmentName = _environment.EnvironmentName,
@@ -53,24 +51,19 @@ namespace Warehouse_CMS.Controllers
 
         public IActionResult Error()
         {
-            // This simulates an error for demonstration purposes
             try
             {
-                // Simulate an error (same for all environments)
                 throw new Exception("An error occurred");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred in the EnvironmentController");
 
-                // In Development/Testing, let the built-in developer exception page handle it
                 if (_environment.IsDevelopment() || _environment.IsEnvironment("Testing"))
                 {
-                    // This will re-throw the exception, allowing the developer exception page middleware to catch it
                     throw;
                 }
 
-                // For other environments (Production/Staging), use our custom error page
                 return View(
                     "Error",
                     new ErrorViewModel
@@ -83,7 +76,6 @@ namespace Warehouse_CMS.Controllers
 
         public IActionResult ClientLibraries()
         {
-            // Create a view model to pass environment-specific configuration
             var viewModel = new ClientLibrariesViewModel
             {
                 EnvironmentName = _environment.EnvironmentName,
@@ -92,29 +84,23 @@ namespace Warehouse_CMS.Controllers
                 IsProduction = _environment.IsProduction(),
                 IsTesting = _environment.IsEnvironment("Testing"),
 
-                // Environment-specific JavaScript settings
                 JsConfig = new ClientJsConfig
                 {
-                    // In development/testing, use unminified libraries with source maps
                     UseMinifiedLibraries = !(
                         _environment.IsDevelopment() || _environment.IsEnvironment("Testing")
                     ),
 
-                    // Debug mode only in development/testing
                     EnableDebugMode =
                         _environment.IsDevelopment() || _environment.IsEnvironment("Testing"),
 
-                    // Detailed logging only in development/testing
                     LogLevel =
                         _environment.IsDevelopment() || _environment.IsEnvironment("Testing")
                             ? "debug"
                             : (_environment.IsStaging() ? "warn" : "error"),
 
-                    // Error reporting endpoint - could be different per environment
                     ErrorReportingEndpoint =
                         _configuration["ErrorReporting:Endpoint"] ?? "/api/error-reporting",
 
-                    // Environment name to pass to client scripts
                     EnvironmentName = _environment.EnvironmentName,
                 },
             };
@@ -141,7 +127,6 @@ namespace Warehouse_CMS.Controllers
             [HttpPost]
             public IActionResult ReportError([FromBody] ClientErrorReport errorReport)
             {
-                // Don't log as error in development environment to avoid filling logs
                 if (_environment.IsDevelopment() || _environment.IsEnvironment("Testing"))
                 {
                     _logger.LogInformation(
@@ -152,15 +137,12 @@ namespace Warehouse_CMS.Controllers
                 }
                 else
                 {
-                    // In production, log as an actual error
                     _logger.LogError(
                         "Client error reported: {ErrorType} - {ErrorMessage} - URL: {Url}",
                         errorReport.Type,
                         errorReport.Message,
                         errorReport.Url
                     );
-
-                    // In a real app, you could save this to a database, send to an error tracking service, etc.
                 }
 
                 return Ok();

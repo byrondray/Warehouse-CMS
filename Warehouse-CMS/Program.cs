@@ -104,6 +104,10 @@ builder.Services.AddScoped<IProductRepository, EfProductRepository>();
 builder.Services.AddScoped<ISupplierRepository, EfSupplierRepository>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 
+// builder.Services.AddTransient<IWebHostEnvironment>(sp =>
+//     sp.GetRequiredService<IWebHostEnvironment>()
+// );
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
@@ -130,7 +134,7 @@ if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
 {
     app.UseDeveloperExceptionPage();
     app.UseMigrationsEndPoint();
-    app.UseStatusCodePagesWithReExecute("/Home/StatusCode", "?statusCode={0}");
+    app.UseStatusCodePages();
 }
 else if (app.Environment.IsStaging())
 {
