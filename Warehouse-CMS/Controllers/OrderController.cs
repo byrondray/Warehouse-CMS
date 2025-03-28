@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Warehouse_CMS.Models;
 using Warehouse_CMS.Repositories;
@@ -13,13 +14,17 @@ namespace Warehouse_CMS.Controllers
         private readonly ICustomerRepository _customerRepository;
         private readonly IOrderStatusRepository _orderStatusRepository;
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly IEmployeeIdentityRepository _employeeIdentityRepository;
+        private readonly UserManager<IdentityUser> _userManager;
 
         public OrderController(
             IOrderRepository orderRepository,
             IProductRepository productRepository,
             ICustomerRepository customerRepository,
             IOrderStatusRepository orderStatusRepository,
-            IEmployeeRepository employeeRepository
+            IEmployeeRepository employeeRepository,
+            IEmployeeIdentityRepository employeeIdentityRepository,
+            UserManager<IdentityUser> userManager
         )
         {
             _orderRepository = orderRepository;
@@ -27,6 +32,8 @@ namespace Warehouse_CMS.Controllers
             _customerRepository = customerRepository;
             _orderStatusRepository = orderStatusRepository;
             _employeeRepository = employeeRepository;
+            _employeeIdentityRepository = employeeIdentityRepository;
+            _userManager = userManager;
         }
 
         public IActionResult Index()
@@ -60,7 +67,7 @@ namespace Warehouse_CMS.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create(
+        public async Task<IActionResult> Create(
             int CustomerId,
             string CustomerName,
             List<int> productIds,
@@ -69,8 +76,31 @@ namespace Warehouse_CMS.Controllers
             int? removeIndex
         )
         {
-            // Hardcoded employee ID - replace with the ID of an employee in your database
-            int employeeId = 1; // Typically this would be the first employee or a specific employee you want to use
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Unauthorized();
+            }
+
+            var employee = await _employeeIdentityRepository.GetEmployeeByIdentityUserIdAsync(
+                currentUser.Id
+            );
+            if (employee == null)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "Your user account is not linked to an employee record"
+                );
+                ViewBag.Products = _productRepository.GetAll();
+                ViewBag.Customers = _customerRepository.GetAll();
+                return View(
+                    new Order
+                    {
+                        OrderDate = DateTime.Now,
+                        OrderItems = new List<OrderItem> { new OrderItem { Quantity = 1 } },
+                    }
+                );
+            }
 
             var pendingStatus = _orderStatusRepository
                 .GetAll()
@@ -87,9 +117,8 @@ namespace Warehouse_CMS.Controllers
                 OrderStatusId = pendingStatus.Id,
                 OrderStatus = pendingStatus,
                 OrderItems = new List<OrderItem>(),
-
-                EmployeeId = employeeId,
-                Employee = _employeeRepository.GetById(employeeId),
+                EmployeeId = employee.Id,
+                Employee = employee,
             };
 
             Customer customer = null;
@@ -211,6 +240,41 @@ namespace Warehouse_CMS.Controllers
                 }
             }
 
+            return View(order);
+        }
+
+        [HttpGet]
+        public IActionResult Edit(int id)
+        {
+            var order = _orderRepository.GetById(id);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            ViewBag.OrderStatuses = _orderStatusRepository.GetAll();
+            return View(order);
+        }
+
+        [HttpPost]
+        public IActionResult Edit(Order order)
+        {
+            if (ModelState.IsValid)
+            {
+                var originalOrder = _orderRepository.GetById(order.Id);
+                if (originalOrder == null)
+                {
+                    return NotFound();
+                }
+
+                originalOrder.OrderStatusId = order.OrderStatusId;
+
+                _orderRepository.Update(originalOrder);
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            ViewBag.OrderStatuses = _orderStatusRepository.GetAll();
             return View(order);
         }
     }

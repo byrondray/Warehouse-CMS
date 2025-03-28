@@ -1,0 +1,35 @@
+@model Warehouse_CMS.Models.ViewModels.DeleteRoleViewModel
+
+@{
+    ViewData["Title"] = "Delete Role";
+}
+
+<h1>Delete Role</h1>
+
+<div class="alert alert-danger">
+    <h4>Are you sure you want to delete this role?</h4>
+    <p>Deleting this role will remove all user assignments. This action cannot be undone.</p>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h4>Role Details</h4>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Role Name</dt>
+            <dd class="col-sm-9">@Model.RoleName</dd>
+
+            <dt class="col-sm-3">Description</dt>
+            <dd class="col-sm-9">@Model.Description</dd>
+        </dl>
+
+        <form asp-action="Delete" method="post">
+            <input type="hidden" asp-for="RoleId" />
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-danger">Delete</button>
+                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>

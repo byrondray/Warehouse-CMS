@@ -103,6 +103,10 @@ builder.Services.AddScoped<IOrderStatusRepository, EfOrderStatusRepository>();
 builder.Services.AddScoped<IProductRepository, EfProductRepository>();
 builder.Services.AddScoped<ISupplierRepository, EfSupplierRepository>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IRoleManagementRepository, RoleManagementRepository>();
+builder.Services.AddScoped<IEmployeeIdentityRepository, EmployeeIdentityRepository>();
+
+builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
 
 // builder.Services.AddTransient<IWebHostEnvironment>(sp =>
 //     sp.GetRequiredService<IWebHostEnvironment>()

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Warehouse_CMS.Data;
 using Warehouse_CMS.Models;
 
@@ -7,6 +8,10 @@ public static class SeedDatabase
     {
         using var scope = serviceProvider.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+
+        EnsureEmployeeRolesExist(dbContext);
 
         if (!dbContext.Categories.Any())
         {
@@ -35,27 +40,6 @@ public static class SeedDatabase
                 new OrderStatus { Status = "Cancelled" },
             };
             dbContext.OrderStatuses.AddRange(orderStatuses);
-            dbContext.SaveChanges();
-
-            var employeeRoles = new List<EmployeeRole>
-            {
-                new EmployeeRole
-                {
-                    Role = "Sales Associate",
-                    Description = "Handles customer orders and sales",
-                },
-                new EmployeeRole
-                {
-                    Role = "Manager",
-                    Description = "Oversees warehouse operations",
-                },
-                new EmployeeRole
-                {
-                    Role = "Warehouse Staff",
-                    Description = "Handles inventory and shipping",
-                },
-            };
-            dbContext.EmployeeRoles.AddRange(employeeRoles);
             dbContext.SaveChanges();
 
             var suppliers = new List<Supplier>
@@ -137,6 +121,81 @@ public static class SeedDatabase
             };
             dbContext.Products.AddRange(products);
             dbContext.SaveChanges();
+        }
+
+        SeedIdentityRoles(dbContext, roleManager).Wait();
+        SeedAdminUser(userManager, roleManager).Wait();
+    }
+
+    private static void EnsureEmployeeRolesExist(ApplicationDbContext context)
+    {
+        var requiredRoles = new List<(string Role, string Description)>
+        {
+            ("Admin", "System administrator with full access"),
+            ("Sales Associate", "Handles customer orders and sales"),
+            ("Manager", "Oversees warehouse operations"),
+            ("Warehouse Staff", "Handles inventory and shipping"),
+        };
+
+        foreach (var roleInfo in requiredRoles)
+        {
+            if (!context.EmployeeRoles.Any(r => r.Role == roleInfo.Role))
+            {
+                context.EmployeeRoles.Add(
+                    new EmployeeRole { Role = roleInfo.Role, Description = roleInfo.Description }
+                );
+            }
+        }
+
+        context.SaveChanges();
+    }
+
+    private static async Task SeedIdentityRoles(
+        ApplicationDbContext context,
+        RoleManager<IdentityRole> roleManager
+    )
+    {
+        var employeeRoles = context.EmployeeRoles.ToList();
+
+        foreach (var employeeRole in employeeRoles)
+        {
+            if (!await roleManager.RoleExistsAsync(employeeRole.Role))
+            {
+                await roleManager.CreateAsync(new IdentityRole(employeeRole.Role));
+            }
+        }
+    }
+
+    private static async Task SeedAdminUser(
+        UserManager<IdentityUser> userManager,
+        RoleManager<IdentityRole> roleManager
+    )
+    {
+        if (!await roleManager.RoleExistsAsync("Admin"))
+        {
+            await roleManager.CreateAsync(new IdentityRole("Admin"));
+        }
+
+        var adminEmail = "admin@warehouse.com";
+        var adminUser = await userManager.FindByEmailAsync(adminEmail);
+
+        if (adminUser == null)
+        {
+            var user = new IdentityUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                EmailConfirmed = true,
+            };
+
+            var password = "Admin@123456";
+
+            var result = await userManager.CreateAsync(user, password);
+
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(user, "Admin");
+            }
         }
     }
 }

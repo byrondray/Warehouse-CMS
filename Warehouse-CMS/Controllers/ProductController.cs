@@ -73,6 +73,7 @@ namespace Warehouse_CMS.Controllers
             return View(viewModel);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         public IActionResult Create()
         {
             var viewModel = new ProductViewModel
@@ -84,6 +85,7 @@ namespace Warehouse_CMS.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,Manager")]
         public IActionResult Create(ProductViewModel viewModel)
         {
             if (ModelState.IsValid)
@@ -117,6 +119,7 @@ namespace Warehouse_CMS.Controllers
             return View(viewModel);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         public IActionResult Edit(int id)
         {
             var product = _repository.GetById(id);
@@ -154,6 +157,7 @@ namespace Warehouse_CMS.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,Manager")]
         public IActionResult Edit(int id, ProductViewModel viewModel)
         {
             if (id != viewModel.Id)
@@ -193,6 +197,7 @@ namespace Warehouse_CMS.Controllers
             return View(viewModel);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         public IActionResult Delete(int id)
         {
             var product = _repository.GetById(id);
@@ -218,6 +223,7 @@ namespace Warehouse_CMS.Controllers
         }
 
         [HttpPost, ActionName("Delete")]
+        [Authorize(Roles = "Admin,Manager")]
         public IActionResult DeleteConfirmed(int id)
         {
             _repository.Delete(id);

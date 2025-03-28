@@ -58,7 +58,6 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
 
         public IList<AuthenticationScheme> ExternalLogins { get; set; }
 
-        // For the roles dropdown
         public IEnumerable<SelectListItem> AvailableRoles { get; set; }
 
         public class InputModel
@@ -86,7 +85,6 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
             )]
             public string ConfirmPassword { get; set; }
 
-            // Employee-specific fields
             [Required]
             [Display(Name = "Full Name")]
             public string Name { get; set; }
@@ -108,7 +106,6 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                 await _signInManager.GetExternalAuthenticationSchemesAsync()
             ).ToList();
 
-            // Populate available roles for the dropdown
             AvailableRoles = _employeeRoleRepository
                 .GetAll()
                 .Select(r => new SelectListItem { Value = r.Id.ToString(), Text = r.Role });
@@ -121,7 +118,6 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                 await _signInManager.GetExternalAuthenticationSchemesAsync()
             ).ToList();
 
-            // Repopulate available roles in case we need to redisplay the form
             AvailableRoles = _employeeRoleRepository
                 .GetAll()
                 .Select(r => new SelectListItem { Value = r.Id.ToString(), Text = r.Role });
@@ -138,15 +134,21 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                 {
                     _logger.LogInformation("User created a new account with password.");
 
-                    // Create the associated Employee record
                     var employee = new Employee
                     {
                         Name = Input.Name,
                         StartDate = Input.StartDate,
                         EmployeeRoleId = Input.EmployeeRoleId,
+                        UserId = user.Id,
                     };
 
                     _employeeRepository.Add(employee);
+
+                    var employeeRole = _employeeRoleRepository.GetById(Input.EmployeeRoleId);
+                    if (employeeRole != null)
+                    {
+                        await _userManager.AddToRoleAsync(user, employeeRole.Role);
+                    }
 
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -189,7 +191,6 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                 }
             }
 
-            // If we got this far, something failed, redisplay form
             return Page();
         }
 
