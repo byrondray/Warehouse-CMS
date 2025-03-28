@@ -72,6 +72,16 @@ builder
     .AddDefaultTokenProviders()
     .AddDefaultUI();
 
+builder
+    .Services.AddAuthentication()
+    .AddGoogle(options =>
+    {
+        options.ClientId =
+            "627011667072-2s4u54cjesdj43lfphs41m178k3c41rs.apps.googleusercontent.com";
+        options.ClientSecret = "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";
+        options.CallbackPath = "/signin-google";
+    });
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Identity/Account/Login";
@@ -107,10 +117,6 @@ builder.Services.AddScoped<IRoleManagementRepository, RoleManagementRepository>(
 builder.Services.AddScoped<IEmployeeIdentityRepository, EmployeeIdentityRepository>();
 
 builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
-
-// builder.Services.AddTransient<IWebHostEnvironment>(sp =>
-//     sp.GetRequiredService<IWebHostEnvironment>()
-// );
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
