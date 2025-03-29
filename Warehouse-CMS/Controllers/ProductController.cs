@@ -42,6 +42,11 @@ namespace Warehouse_CMS.Controllers
                     SupplierName = p.Supplier?.Name,
                 });
 
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_ProductsList", products);
+            }
+
             return View(products);
         }
 
@@ -70,6 +75,11 @@ namespace Warehouse_CMS.Controllers
                 SupplierName = product.Supplier?.Name,
             };
 
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_ProductDetails", viewModel);
+            }
+
             return View(viewModel);
         }
 
@@ -81,6 +91,13 @@ namespace Warehouse_CMS.Controllers
                 CategoryList = new SelectList(_categoryRepository.GetAll(), "Id", "Name"),
                 SupplierList = new SelectList(_supplierRepository.GetAll(), "Id", "Name"),
             };
+
+            // Check if this is an AJAX request for the pseudo-SPA
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_CreateProduct", viewModel);
+            }
+
             return View(viewModel);
         }
 
@@ -101,6 +118,12 @@ namespace Warehouse_CMS.Controllers
                 };
 
                 _repository.Add(product);
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = true, redirectUrl = Url.Action("Index") });
+                }
+
                 return RedirectToAction(nameof(Index));
             }
 
@@ -116,6 +139,12 @@ namespace Warehouse_CMS.Controllers
                 "Name",
                 viewModel.SupplierId
             );
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_CreateProduct", viewModel);
+            }
+
             return View(viewModel);
         }
 
@@ -153,6 +182,11 @@ namespace Warehouse_CMS.Controllers
                 ),
             };
 
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_EditProduct", viewModel);
+            }
+
             return View(viewModel);
         }
 
@@ -179,6 +213,12 @@ namespace Warehouse_CMS.Controllers
                 };
 
                 _repository.Update(product);
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = true, redirectUrl = Url.Action("Index") });
+                }
+
                 return RedirectToAction(nameof(Index));
             }
 
@@ -194,6 +234,12 @@ namespace Warehouse_CMS.Controllers
                 "Name",
                 viewModel.SupplierId
             );
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_EditProduct", viewModel);
+            }
+
             return View(viewModel);
         }
 
@@ -219,6 +265,11 @@ namespace Warehouse_CMS.Controllers
                 SupplierName = product.Supplier?.Name,
             };
 
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_DeleteProduct", viewModel);
+            }
+
             return View(viewModel);
         }
 
@@ -227,6 +278,12 @@ namespace Warehouse_CMS.Controllers
         public IActionResult DeleteConfirmed(int id)
         {
             _repository.Delete(id);
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = true, redirectUrl = Url.Action("Index") });
+            }
+
             return RedirectToAction(nameof(Index));
         }
     }

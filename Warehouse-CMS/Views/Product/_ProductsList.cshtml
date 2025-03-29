@@ -1,0 +1,56 @@
+@model IEnumerable<Warehouse_CMS.ViewModels.ProductViewModel>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Products</h1>
+        <a href="@Url.Action("Create", "Product")" class="btn btn-primary" data-spa="true">Create New Product</a>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>@Html.DisplayNameFor(model => model.Name)</th>
+                <th>@Html.DisplayNameFor(model => model.CategoryName)</th>
+                <th>@Html.DisplayNameFor(model => model.SupplierName)</th>
+                <th>@Html.DisplayNameFor(model => model.Price)</th>
+                <th>@Html.DisplayNameFor(model => model.StockQuantity)</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>@item.CategoryName</td>
+                    <td>@item.SupplierName</td>
+                    <td>@item.Price.ToString("C")</td>
+                    <td>@item.StockQuantity</td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="@Url.Action("Details", "Product", new { id = item.Id })" class="btn btn-info btn-sm"
+                                data-spa="true">Details</a>
+                            <a href="@Url.Action("Edit", "Product", new { id = item.Id })" class="btn btn-warning btn-sm"
+                                data-spa="true">Edit</a>
+                            <a href="@Url.Action("Delete", "Product", new { id = item.Id })" class="btn btn-danger btn-sm"
+                                data-spa="true">Delete</a>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('a[data-spa="true"]').on('click', function (e) {
+            e.preventDefault();
+            var url = $(this).attr('href');
+
+            window.history.pushState({ path: url }, '', url);
+
+            $('#content-container').load(url);
+        });
+    });
+</script>

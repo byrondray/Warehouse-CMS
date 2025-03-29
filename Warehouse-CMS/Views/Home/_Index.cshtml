@@ -1,0 +1,136 @@
+<div class="container mt-4">
+    <div class="row align-items-center mb-5">
+        <div class="col-md-6">
+            <h1 class="display-4 fw-bold">Warehouse Management System</h1>
+            <p class="lead text-muted">
+                Efficiently manage your inventory, track products, and handle orders all in one place.
+            </p>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                <a href="#Products" class="btn btn-primary btn-lg px-4">
+                    View Products
+                </a>
+                <a href="#Orders" class="btn btn-outline-secondary btn-lg px-4">
+                    Manage Orders
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <i class="bi bi-box-seam fs-1 text-primary mb-3"></i>
+                    <h5 class="card-title">Total Products</h5>
+                    <p class="card-text display-6">@ViewBag.TotalProducts</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <i class="bi bi-exclamation-triangle fs-1 text-warning mb-3"></i>
+                    <h5 class="card-title">Low Stock</h5>
+                    <p class="card-text display-6">@ViewBag.LowStockCount</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <i class="bi bi-cart-check fs-1 text-success mb-3"></i>
+                    <h5 class="card-title">Active Orders</h5>
+                    <p class="card-text display-6">@ViewBag.ActiveOrders</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <i class="bi bi-people fs-1 text-info mb-3"></i>
+                    <h5 class="card-title">Suppliers</h5>
+                    <p class="card-text display-6">@ViewBag.SupplierCount</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="mb-4">Quick Actions</h2>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-plus-circle text-primary"></i> Add New Product
+                    </h5>
+                    <p class="card-text">Create a new product entry in your inventory.</p>
+                    <a href="#Products/Create" class="btn btn-primary">Add Product</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-clipboard-check text-success"></i> Create Order
+                    </h5>
+                    <p class="card-text">Process a new customer order.</p>
+                    <a href="#Orders/Create" class="btn btn-success">New Order</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-search text-info"></i> Check Stock
+                    </h5>
+                    <p class="card-text">View and manage current inventory levels.</p>
+                    <a href="#Products" class="btn btn-info text-white">Check Stock</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            @if (ViewBag.LowStockProducts != null && ViewBag.LowStockCount > 0)
+            {
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">
+                                <i class="bi bi-exclamation-triangle"></i> Low Stock Alert
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Current Stock</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var product in ViewBag.LowStockProducts)
+                                        {
+                                                <tr>
+                                                    <td>@product.Name</td>
+                                                    <td>@product.StockQuantity</td>
+                                                    <td>
+                                                        <a href="#Products/Edit/@product.Id" class="btn btn-warning btn-sm">Update Stock</a>
+                                                    </td>
+                                                </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+            }
+        </div>
+    </div>
+</div>

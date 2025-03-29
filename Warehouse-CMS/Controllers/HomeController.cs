@@ -1,12 +1,12 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Warehouse_CMS.Models;
 using Warehouse_CMS.Repositories;
 
 namespace Warehouse_CMS.Controllers
 {
     [Authorize]
-    [ActivatorUtilitiesConstructor]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -14,8 +14,6 @@ namespace Warehouse_CMS.Controllers
         private readonly ISupplierRepository _supplierRepository;
         private readonly IOrderRepository _orderRepository;
         private readonly IOrderStatusRepository _orderStatusRepository;
-
-        // private readonly IWebHostEnvironment _environment;
 
         private const int LOW_STOCK_THRESHOLD = 5;
 
@@ -25,7 +23,6 @@ namespace Warehouse_CMS.Controllers
             ISupplierRepository supplierRepository,
             IOrderRepository orderRepository,
             IOrderStatusRepository orderStatusRepository
-        // IWebHostEnvironment environment
         )
         {
             _logger = logger;
@@ -33,17 +30,13 @@ namespace Warehouse_CMS.Controllers
             _supplierRepository = supplierRepository;
             _orderRepository = orderRepository;
             _orderStatusRepository = orderStatusRepository;
-            // _environment = environment;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(bool route = false)
         {
             var products = _productRepository.GetAll().ToList();
-
             var suppliers = _supplierRepository.GetAll().ToList();
-
             var orders = _orderRepository.GetAll().ToList();
-
             var orderStatuses = _orderStatusRepository.GetAll().ToList();
 
             ViewBag.TotalProducts = products.Count;
@@ -66,11 +59,25 @@ namespace Warehouse_CMS.Controllers
 
             ViewBag.SupplierCount = suppliers.Count;
 
+            if (route)
+            {
+                return PartialView();
+            }
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_Index");
+            }
+
             return View();
         }
 
         public IActionResult Privacy()
         {
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_Privacy");
+            }
             return View();
         }
 
@@ -84,24 +91,5 @@ namespace Warehouse_CMS.Controllers
                 }
             );
         }
-
-        // public IActionResult StatusCode(int statusCode)
-        // {
-        //     if (statusCode == 404)
-        //     {
-        //         if (_environment.IsProduction() || _environment.IsStaging())
-        //         {
-        //             return View("NotFound");
-        //         }
-        //     }
-
-        //     return View(
-        //         "Error",
-        //         new ErrorViewModel
-        //         {
-        //             RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
-        //         }
-        //     );
-        // }
     }
 }

@@ -1,0 +1,40 @@
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Products</h1>
+        <a href="#Products/Create" class="btn btn-primary">Create New Product</a>
+    </div>
+
+    <div id="products-list">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Supplier</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Name</td>
+                        <td>@item.CategoryName</td>
+                        <td>@item.SupplierName</td>
+                        <td>@item.Price.ToString("C")</td>
+                        <td>@item.StockQuantity</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="#Products/Details/@item.Id" class="btn btn-info btn-sm">Details</a>
+                                <a href="#Products/Edit/@item.Id" class="btn btn-warning btn-sm">Edit</a>
+                                <a href="#Products/Delete/@item.Id" class="btn btn-danger btn-sm">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

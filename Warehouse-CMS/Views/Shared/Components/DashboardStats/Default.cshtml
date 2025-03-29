@@ -1,0 +1,40 @@
+@model Warehouse_CMS.ViewComponents.DashboardStatsViewModel
+
+<div class="row mb-5">
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="bi bi-box-seam fs-1 text-primary mb-3"></i>
+                <h5 class="card-title">Total Products</h5>
+                <p class="card-text display-6">@Model.TotalProducts</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="bi bi-exclamation-triangle fs-1 text-warning mb-3"></i>
+                <h5 class="card-title">Low Stock</h5>
+                <p class="card-text display-6">@Model.LowStockCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="bi bi-cart-check fs-1 text-success mb-3"></i>
+                <h5 class="card-title">Active Orders</h5>
+                <p class="card-text display-6">@Model.ActiveOrders</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="bi bi-people fs-1 text-info mb-3"></i>
+                <h5 class="card-title">Suppliers</h5>
+                <p class="card-text display-6">@Model.SupplierCount</p>
+            </div>
+        </div>
+    </div>
+</div>

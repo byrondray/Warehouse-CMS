@@ -39,6 +39,12 @@ namespace Warehouse_CMS.Controllers
         public IActionResult Index()
         {
             var orders = _orderRepository.GetAll().ToList();
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_OrdersList", orders);
+            }
+
             return View(orders);
         }
 
