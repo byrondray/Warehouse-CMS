@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.SqlServer;
 using Warehouse_CMS.Attributes;
 using Warehouse_CMS.Data;
 using Warehouse_CMS.Models;
@@ -14,29 +15,33 @@ var environment = builder.Environment.EnvironmentName;
 Console.WriteLine($"Current environment: {environment}");
 
 var connectionString =
-    builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+    builder.Configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING")
+    ?? throw new InvalidOperationException(
+        "Connection string 'AZURE_SQL_CONNECTIONSTRING' not found."
+    );
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
-    {
-        options
-            .UseMySql(
-                connectionString,
-                ServerVersion.AutoDetect(connectionString),
-                mySqlOptions => mySqlOptions.EnableRetryOnFailure()
-            )
-            .EnableSensitiveDataLogging();
-    }
-    else
-    {
-        options.UseMySql(
-            connectionString,
-            ServerVersion.AutoDetect(connectionString),
-            mySqlOptions => mySqlOptions.EnableRetryOnFailure()
-        );
-    }
+    // if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
+    // {
+    //     options
+    //         .UseMySql(
+    //             connectionString,
+    //             ServerVersion.AutoDetect(connectionString),
+    //             mySqlOptions => mySqlOptions.EnableRetryOnFailure()
+    //         )
+    //         .EnableSensitiveDataLogging();
+    // }
+    // else
+    // {
+    //     options.UseMySql(
+    //         connectionString,
+    //         ServerVersion.AutoDetect(connectionString),
+    //         mySqlOptions => mySqlOptions.EnableRetryOnFailure()
+    //     );
+    // }
+
+    options.UseSqlServer(connectionString);
 });
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -129,6 +134,15 @@ builder.Services.AddControllersWithViews(options =>
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.Database.Migrate();
+    }
+}
 
 using (var scope = app.Services.CreateScope())
 {

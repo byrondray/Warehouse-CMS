@@ -1,0 +1,5 @@
+{
+  "appService.preDeployTask": "publish-release",
+  "appService.deploySubpath": "Warehouse-CMS\\bin\\Release\\net8.0\\publish",
+  "appService.defaultWebAppToDeploy": "/subscriptions/49a35712-3437-429e-b28a-ba4adbe2af7b/resourceGroups/warehouse_cms/providers/Microsoft.Web/sites/warehouse-cms"
+}
