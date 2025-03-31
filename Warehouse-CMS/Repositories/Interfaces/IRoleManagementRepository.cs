@@ -14,5 +14,6 @@ namespace Warehouse_CMS.Repositories
         Task<bool> AddUserToRoleAsync(string userId, string roleName);
         Task<bool> RemoveUserFromRoleAsync(string userId, string roleName);
         Task<IList<string>> GetUserRolesAsync(string userId);
+        Task<bool> IsUserInRoleAsync(string userId, string roleName);
     }
 }

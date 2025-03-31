@@ -7,7 +7,6 @@ using Warehouse_CMS.Repositories;
 
 namespace Warehouse_CMS.Controllers
 {
-    [Authorize(Roles = "Admin")]
     [VirtualDom]
     public class RolesController : Controller
     {
@@ -26,6 +25,7 @@ namespace Warehouse_CMS.Controllers
             _userManager = userManager;
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Index()
         {
             await _roleRepository.SyncEmployeeRolesWithIdentityRolesAsync();
@@ -42,6 +42,7 @@ namespace Warehouse_CMS.Controllers
             return View(viewModel);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         public IActionResult Create()
         {
             return View();
@@ -49,6 +50,7 @@ namespace Warehouse_CMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Create(CreateRoleViewModel model)
         {
             if (ModelState.IsValid)
@@ -77,6 +79,7 @@ namespace Warehouse_CMS.Controllers
             return View(model);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Edit(string id)
         {
             var identityRole = await _roleRepository.GetIdentityRoleByIdAsync(id);
@@ -101,6 +104,7 @@ namespace Warehouse_CMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Edit(string id, EditRoleViewModel model)
         {
             if (id != model.RoleId)
@@ -146,6 +150,7 @@ namespace Warehouse_CMS.Controllers
             return View(model);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Delete(string id)
         {
             var identityRole = await _roleRepository.GetIdentityRoleByIdAsync(id);
@@ -170,6 +175,7 @@ namespace Warehouse_CMS.Controllers
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> DeleteConfirmed(string id)
         {
             var identityRole = await _roleRepository.GetIdentityRoleByIdAsync(id);
@@ -201,6 +207,7 @@ namespace Warehouse_CMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> ManageUsers(string id)
         {
             var role = await _roleRepository.GetIdentityRoleByIdAsync(id);
@@ -232,6 +239,7 @@ namespace Warehouse_CMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> ManageUsers(ManageUsersInRoleViewModel model)
         {
             var role = await _roleRepository.GetIdentityRoleByIdAsync(model.RoleId);
@@ -243,12 +251,33 @@ namespace Warehouse_CMS.Controllers
             var roleName = role.Name;
             var usersInRole = await _roleRepository.GetUsersInRoleAsync(roleName);
 
+            var allRoles = await _roleRepository.GetAllIdentityRolesAsync();
+            var otherRoleNames = allRoles
+                .Where(r => r.Name != roleName)
+                .Select(r => r.Name)
+                .ToList();
+
             foreach (var user in model.Users)
             {
                 var isInRole = usersInRole.Any(u => u.Id == user.UserId);
 
                 if (user.IsSelected && !isInRole)
                 {
+                    foreach (var otherRoleName in otherRoleNames)
+                    {
+                        var isInOtherRole = await _roleRepository.IsUserInRoleAsync(
+                            user.UserId,
+                            otherRoleName
+                        );
+                        if (isInOtherRole)
+                        {
+                            await _roleRepository.RemoveUserFromRoleAsync(
+                                user.UserId,
+                                otherRoleName
+                            );
+                        }
+                    }
+
                     await _roleRepository.AddUserToRoleAsync(user.UserId, roleName);
                 }
                 else if (!user.IsSelected && isInRole)
