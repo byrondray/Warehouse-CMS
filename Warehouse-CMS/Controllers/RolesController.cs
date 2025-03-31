@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Warehouse_CMS.Attributes;
 using Warehouse_CMS.Models.ViewModels;
 using Warehouse_CMS.Repositories;
 
 namespace Warehouse_CMS.Controllers
 {
     [Authorize(Roles = "Admin")]
+    [VirtualDom]
     public class RolesController : Controller
     {
         private readonly IRoleManagementRepository _roleRepository;

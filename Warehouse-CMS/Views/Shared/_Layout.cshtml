@@ -9,13 +9,15 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Warehouse_CMS.styles.css" asp-append-version="true" />
+    <meta name="globalsign-domain-verification" content="disable-source-maps">
 </head>
 
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Warehouse Manager</a>
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index" data-spa="true">Warehouse
+                    Manager</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
                     aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -27,10 +29,9 @@
                         <li><a class="nav-link text-dark" asp-controller="Order" asp-action="Index"
                                 data-spa="true">Orders</a></li>
                         <li class="nav-item" asp-authorize asp-roles="Admin,Manager">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Roles"
-                                asp-action="Index">Roles</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Roles" asp-action="Index"
+                                data-spa="true">Roles</a>
                         </li>
-
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>
@@ -47,15 +48,25 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2025 - Warehouse_CMS - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2025 - Warehouse_CMS - <a asp-area="" asp-controller="Home" asp-action="Privacy"
+                data-spa="true">Privacy</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://unpkg.com/apprun@latest/dist/apprun-html.js"></script>
     <script>
         $(document).ready(function () {
-            $('a[data-spa="true"]').on('click', function (e) {
+            let requestCounter = 0;
+
+            $('a[href^="/"]:not([data-spa]), a[href^="' + window.location.origin + '"]:not([data-spa])')
+                .not('[href^="#"]')
+                .not('[href*="/Identity/"]')
+                .not('[target="_blank"]')
+                .attr('data-spa', 'true');
+
+            $(document).on('click', 'a[data-spa="true"]', function (e) {
                 e.preventDefault();
                 var url = $(this).attr('href');
 
@@ -64,41 +75,156 @@
                     return;
                 }
 
+                console.log("SPA navigation to: " + url);
                 window.history.pushState({ path: url }, '', url);
+                loadContent(url);
+            });
+
+            $(document).on('submit', 'form:not([action*="Identity"])', function (e) {
+                e.preventDefault();
+                console.log("Form submission via SPA");
+
+                var $form = $(this);
+                var url = $form.attr('action') || window.location.pathname;
+                var method = $form.attr('method') || 'GET';
 
                 $.ajax({
                     url: url,
-                    type: 'GET',
+                    type: method,
+                    data: $form.serialize(),
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    success: function (data) {
-                        $('#content-container').html(data);
+                    success: function (response) {
+                        if (typeof response === 'object' && response.redirectTo) {
+                            console.log("SPA redirect to: " + response.redirectTo);
+                            window.history.pushState({ path: response.redirectTo }, '', response.redirectTo);
+                            loadContent(response.redirectTo);
+                        } else {
+                            $('#content-container').html(response);
+                            reattachValidation();
+                        }
                     },
                     error: function (xhr, status, error) {
-                        $('#content-container').html('Error loading content. Please try again.');
+                        console.error("Form submission error:", error);
+                        if (xhr.status === 400 && xhr.responseJSON) {
+                            const errors = xhr.responseJSON;
+                            for (const key in errors) {
+                                $(`[data-valmsg-for="${key}"]`).text(errors[key]);
+                            }
+                        } else {
+                            $('#content-container').html('Error processing your request. Please try again.');
+                        }
                     }
                 });
             });
 
-            $(window).on('popstate', function () {
+            $(window).on('popstate', function (e) {
                 var url = window.location.href;
+                console.log("Popstate navigation to: " + url);
 
                 if (url.includes("/Identity/")) {
                     window.location.href = url;
                     return;
                 }
 
+                loadContent(url);
+            });
+
+            function loadContent(url) {
+                requestCounter++;
+                console.log(`Request #${requestCounter} to ${url}`);
+
+                $('#content-container').html('<div class="text-center mt-5"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+
                 $.ajax({
                     url: url,
                     type: 'GET',
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     success: function (data) {
-                        $('#content-container').html(data);
+                        try {
+                            var $temp = $('<div></div>').html(data);
+
+                            var $content = $temp.find('#content-container').html();
+
+                            if ($content) {
+                                $('#content-container').html($content);
+                            } else if ($temp.find('nav.navbar').length > 0) {
+                                var mainContent = data.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
+                                if (mainContent && mainContent[1]) {
+                                    var contentContainerMatch = mainContent[1].match(/<div\s+id="content-container"[^>]*>([\s\S]*?)<\/div>/i);
+                                    if (contentContainerMatch && contentContainerMatch[1]) {
+                                        $('#content-container').html(contentContainerMatch[1]);
+                                    } else {
+                                        $('#content-container').html(mainContent[1]);
+                                    }
+                                } else {
+                                    $('#content-container').html(data);
+                                }
+                            } else {
+                                $('#content-container').html(data);
+                            }
+
+                            console.log("Content loaded successfully");
+                            reattachValidation();
+
+                            $('#content-container a[href^="/"]:not([data-spa]), #content-container a[href^="' + window.location.origin + '"]:not([data-spa])')
+                                .not('[href^="#"]')
+                                .not('[href^="javascript"]')
+                                .not('[href^="mailto"]')
+                                .not('[target="_blank"]')
+                                .not('[href*="/Identity/"]')
+                                .attr('data-spa', 'true');
+                        } catch (e) {
+                            console.error("Error processing content:", e);
+                            $('#content-container').html(data);
+                        }
                     },
                     error: function (xhr, status, error) {
-                        $('#content-container').html('Error loading content. Please try again.');
+                        console.error("Content loading error:", error);
+                        $('#content-container').html('<div class="alert alert-danger">Error loading content. Please try again.</div>');
                     }
                 });
-            });
+            }
+
+            function reattachValidation() {
+                if (typeof $.validator !== 'undefined') {
+                    $.validator.unobtrusive.parse('form');
+                }
+
+                if (typeof bootstrap !== 'undefined') {
+                    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                    tooltipTriggerList.map(function (tooltipTriggerEl) {
+                        return new bootstrap.Tooltip(tooltipTriggerEl);
+                    });
+
+                    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+                    popoverTriggerList.map(function (popoverTriggerEl) {
+                        return new bootstrap.Popover(popoverTriggerEl);
+                    });
+
+                    var alertList = [].slice.call(document.querySelectorAll('.alert:not(.alert-initialized)'));
+                    alertList.forEach(function (alert) {
+                        alert.classList.add('alert-initialized');
+                        setTimeout(function () {
+                            $(alert).fadeOut('slow', function () {
+                                $(this).remove();
+                            });
+                        }, 5000);
+                    });
+                }
+
+                $(document).trigger('content-updated');
+            }
+
+            console.log("SPA initialized at: " + new Date().toISOString());
+
+            if (!window.location.hash) {
+                $('a[href^="/"]:not([data-spa]), a[href^="' + window.location.origin + '"]:not([data-spa])')
+                    .not('[href^="#"]')
+                    .not('[href*="/Identity/"]')
+                    .not('[target="_blank"]')
+                    .attr('data-spa', 'true');
+                console.log("Added data-spa attribute to " + $('a[data-spa="true"]').length + " initial links");
+            }
 
             function onRoute() {
                 const path = window.location.hash.replace("#", "");
@@ -111,8 +237,10 @@
                 $.ajax({
                     url: path ? '/Pages/' + path : '/Home?route=true',
                     type: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     success: function (data) {
                         $('#content-container').html(data);
+                        reattachValidation();
                     },
                     error: function (xhr, status, error) {
                         $('#content-container').html('Page Not Found.');

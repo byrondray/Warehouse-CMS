@@ -1,3 +1,6 @@
 ﻿@{
-    Layout = "_Layout";
+    if (ViewData["Layout"] == null)
+    {
+        Layout = "_Layout";
+    }
 }

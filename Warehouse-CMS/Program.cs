@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using Warehouse_CMS.Attributes;
 using Warehouse_CMS.Data;
 using Warehouse_CMS.Models;
 using Warehouse_CMS.Repositories;
@@ -118,7 +119,13 @@ builder.Services.AddScoped<IEmployeeIdentityRepository, EmployeeIdentityReposito
 
 builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
 
-builder.Services.AddControllersWithViews();
+// Update the MVC service registration to include the SPA filters
+builder.Services.AddControllersWithViews(options =>
+{
+    // Register the SPA action filter
+    options.Filters.Add<SpaActionFilter>();
+});
+
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
@@ -162,6 +169,19 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+app.Use(
+    async (context, next) =>
+    {
+        var path = context.Request.Path.Value;
+        if (path != null && path.EndsWith(".map"))
+        {
+            context.Response.StatusCode = 404;
+            return;
+        }
+        await next();
+    }
+);
+
 app.UseRouting();
 
 app.UseAuthentication();
@@ -180,6 +200,8 @@ app.MapControllerRoute(
     pattern: "environment/{action=Index}/{id?}",
     defaults: new { controller = "Environment" }
 );
+
+app.MapFallbackToController("Index", "Home");
 
 app.MapRazorPages();
 
