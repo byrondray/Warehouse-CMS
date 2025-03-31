@@ -364,3 +364,4 @@ FodyWeavers.xsd
 
 .env
 secrets.json
+AzureCLI.msi
