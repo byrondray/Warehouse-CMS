@@ -104,7 +104,13 @@
                         }
                     },
                     error: function (xhr, status, error) {
-                        console.error("Form submission error:", error);
+                        console.error("Form submission error:", error, "Status code:", xhr.status);
+
+                        if (xhr.status === 401 || xhr.status === 403) {
+                            window.location.href = '/Identity/Account/AccessDenied';
+                            return;
+                        }
+
                         if (xhr.status === 400 && xhr.responseJSON) {
                             const errors = xhr.responseJSON;
                             for (const key in errors) {
@@ -179,7 +185,14 @@
                         }
                     },
                     error: function (xhr, status, error) {
-                        console.error("Content loading error:", error);
+                        console.error("Content loading error:", error, "Status code:", xhr.status);
+
+                        // Handle 401 (Unauthorized) or 403 (Forbidden) errors
+                        if (xhr.status === 401 || xhr.status === 403) {
+                            window.location.href = '/Identity/Account/AccessDenied';
+                            return;
+                        }
+
                         $('#content-container').html('<div class="alert alert-danger">Error loading content. Please try again.</div>');
                     }
                 });
@@ -243,6 +256,13 @@
                         reattachValidation();
                     },
                     error: function (xhr, status, error) {
+                        console.error("Hash navigation error:", error, "Status code:", xhr.status);
+
+                        if (xhr.status === 401 || xhr.status === 403) {
+                            window.location.href = '/Identity/Account/AccessDenied';
+                            return;
+                        }
+
                         $('#content-container').html('Page Not Found.');
                     }
                 });

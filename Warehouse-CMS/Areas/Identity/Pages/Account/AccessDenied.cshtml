@@ -1,0 +1,29 @@
+@page
+@model AccessDeniedModel
+@{
+    ViewData["Title"] = "Access Denied";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Access Denied</h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">You don't have permission to access this resource</h5>
+                    <p class="card-text">
+                        Your current role doesn't have the necessary permissions to view this page.
+                        Please contact your administrator if you believe this is an error.
+                    </p>
+                    <div class="mt-4">
+                        <a asp-area="" asp-controller="Home" asp-action="Index" class="btn btn-primary">
+                            <i class="fas fa-home"></i> Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

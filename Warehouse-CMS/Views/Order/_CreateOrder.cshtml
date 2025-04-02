@@ -1,0 +1,128 @@
+@model Warehouse_CMS.Models.Order
+
+<div class="container">
+    <h2>Create New Order</h2>
+
+    <form asp-action="Create" method="post">
+        <div asp-validation-summary="All" class="text-danger"></div>
+
+        <div class="form-group mb-3">
+            <label>Customer</label>
+            <div class="row">
+                <div class="col-md-6">
+                    <select id="CustomerId" name="CustomerId" class="form-control">
+                        <option value="">-- Select Existing Customer (Optional) --</option>
+                        @foreach (var customer in ViewBag.Customers)
+                        {
+                                <option value="@customer.Id">@customer.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <input type="text" 
+                           id="CustomerName" 
+                           name="CustomerName" 
+                           class="form-control" 
+                           placeholder="Or enter a new customer name" />
+                </div>
+            </div>
+            <small class="form-text text-muted">
+                Either select an existing customer or enter a new customer name
+            </small>
+        </div>
+
+        <div id="orderItems" class="mb-3">
+            <h4>Order Items</h4>
+            <table class="table" id="itemsTable">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        @if (Model.OrderItems != null && Model.OrderItems.Count > 1)
+                        {
+                                <th>Action</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.OrderItems != null && Model.OrderItems.Any())
+                    {
+                            for (int i = 0; i < Model.OrderItems.Count; i++)
+                            {
+                                    <tr>
+                                        <td>
+                                            <select name="productIds" class="form-control" required>
+                                                <option value="">-- Select Product --</option>
+                                                @foreach (var product in ViewBag.Products)
+                                                {
+                                                        if (Model.OrderItems[i].ProductId == product.Id)
+                                                        {
+                                                                <option value="@product.Id" selected>@product.Name - Stock: @product.StockQuantity - $@product.Price</option>
+                                                        }
+                                                        else
+                                                        {
+                                                                <option value="@product.Id">@product.Name - Stock: @product.StockQuantity - $@product.Price</option>
+                                                        }
+                                                }
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="number" name="quantities" value="@Model.OrderItems[i].Quantity" class="form-control" min="1" required />
+                                        </td>
+                                        @if (Model.OrderItems.Count > 1)
+                                        {
+                                                <td>
+                                                    <button type="submit" name="removeIndex" value="@i" class="btn btn-danger btn-sm">Remove</button>
+                                                </td>
+                                        }
+                                    </tr>
+                            }
+                    }
+                    else
+                    {
+                            <tr>
+                                <td>
+                                    <select name="productIds" class="form-control" required>
+                                        <option value="">-- Select Product --</option>
+                                        @foreach (var product in ViewBag.Products)
+                                        {
+                                                <option value="@product.Id">@product.Name - Stock: @product.StockQuantity - $@product.Price</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" name="quantities" value="1" class="form-control" min="1" required />
+                                </td>
+                            </tr>
+                    }
+                </tbody>
+            </table>
+            
+            <button type="submit" name="action" value="addItem" class="btn btn-secondary mb-3">Add Another Item</button>
+        </div>
+
+        <div class="form-group">
+            <button type="submit" name="action" value="create" class="btn btn-primary">Create Order</button>
+            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const customerIdSelect = document.getElementById('CustomerId');
+        const customerNameInput = document.getElementById('CustomerName');
+
+        customerIdSelect.addEventListener('change', function() {
+            if (this.value) {
+                customerNameInput.value = '';
+            }
+        });
+
+        customerNameInput.addEventListener('input', function() {
+            if (this.value) {
+                customerIdSelect.selectedIndex = 0;
+            }
+        });
+    });
+</script>

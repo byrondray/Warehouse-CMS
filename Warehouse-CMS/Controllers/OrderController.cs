@@ -48,6 +48,7 @@ namespace Warehouse_CMS.Controllers
             return View(orders);
         }
 
+        [Authorize(Roles = "Admin,Manager,Sales Associate")]
         public IActionResult Create()
         {
             var pendingStatus = _orderStatusRepository
@@ -73,6 +74,7 @@ namespace Warehouse_CMS.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,Manager,Sales Associate")]
         public async Task<IActionResult> Create(
             int CustomerId,
             string CustomerName,
@@ -250,6 +252,7 @@ namespace Warehouse_CMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,Manager,Sales Associate")]
         public IActionResult Edit(int id)
         {
             var order = _orderRepository.GetById(id);
@@ -263,6 +266,7 @@ namespace Warehouse_CMS.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,Manager,Sales Associate")]
         public IActionResult Edit(Order order)
         {
             if (ModelState.IsValid)
