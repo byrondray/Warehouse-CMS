@@ -61,6 +61,7 @@
             let requestCounter = 0;
 
             function markLinksForSpa() {
+                // Mark all internal links for SPA navigation
                 $('a[href^="/"]:not([data-spa]), a[href^="' + window.location.origin + '"]:not([data-spa])')
                     .not('[href^="#"]')
                     .not('[href*="/Identity/"]')
@@ -80,10 +81,13 @@
                 }
 
                 console.log("SPA navigation to: " + url);
+                // This allows us to store the state of the page in the history stack
                 window.history.pushState({ path: url }, '', url);
                 loadContent(url);
             });
 
+            // Handle form submissions via AJAX for SPA
+            // Exclude forms with action containing "Identity" to avoid conflicts with Identity pages
             $(document).on('submit', 'form:not([action*="Identity"])', function (e) {
                 e.preventDefault();
                 console.log("Form submission via SPA");
@@ -128,6 +132,8 @@
                 });
             });
 
+            // Handle back/forward navigation in the browser
+            // This is triggered when the user clicks the back/forward buttons in the browser
             $(window).on('popstate', function (e) {
                 var url = window.location.href;
                 console.log("Popstate navigation to: " + url);
@@ -140,6 +146,9 @@
                 loadContent(url);
             });
 
+            // This function is responsible for loading content via AJAX
+            // It updates the content of the #content-container div with the response from the server
+            // It also handles errors and reattaches validation and tooltips/popovers
             function loadContent(url) {
                 requestCounter++;
                 console.log(`Request #${requestCounter} to ${url}`);
@@ -191,6 +200,7 @@
                 });
             }
 
+            // This function reattaches validation and initializes tooltips/popovers
             function reattachValidation() {
                 if (typeof $.validator !== 'undefined') {
                     $.validator.unobtrusive.parse('form');
@@ -223,6 +233,7 @@
 
             console.log("SPA initialized at: " + new Date().toISOString());
 
+            // Handle initial page load with hash
             function onRoute() {
                 const path = window.location.hash.replace("#", "");
 

@@ -37,9 +37,9 @@ namespace Warehouse_CMS.Controllers
                     Price = p.Price,
                     StockQuantity = p.StockQuantity,
                     CategoryId = p.CategoryId,
-                    CategoryName = p.Category?.Name,
+                    CategoryName = p.Category?.Name ?? "",
                     SupplierId = p.SupplierId,
-                    SupplierName = p.Supplier?.Name,
+                    SupplierName = p.Supplier?.Name ?? "",
                 });
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
