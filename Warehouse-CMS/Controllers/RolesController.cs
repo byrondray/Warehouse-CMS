@@ -8,6 +8,7 @@ using Warehouse_CMS.Repositories;
 namespace Warehouse_CMS.Controllers
 {
     [VirtualDom]
+    [TypeFilter(typeof(SpaActionFilter))]
     public class RolesController : Controller
     {
         private readonly IRoleManagementRepository _roleRepository;
@@ -39,12 +40,22 @@ namespace Warehouse_CMS.Controllers
                 EmployeeRoles = employeeRoles,
             };
 
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_Index", viewModel);
+            }
+
             return View(viewModel);
         }
 
         [Authorize(Roles = "Admin,Manager")]
         public IActionResult Create()
         {
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_Create");
+            }
+
             return View();
         }
 
@@ -76,6 +87,11 @@ namespace Warehouse_CMS.Controllers
                 ModelState.AddModelError("", "Role creation failed. Please try again.");
             }
 
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_Create", model);
+            }
+
             return View(model);
         }
 
@@ -98,6 +114,11 @@ namespace Warehouse_CMS.Controllers
                 RoleName = identityRole.Name,
                 Description = employeeRole?.Description ?? "",
             };
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_Edit", viewModel);
+            }
 
             return View(viewModel);
         }
@@ -147,6 +168,11 @@ namespace Warehouse_CMS.Controllers
                 ModelState.AddModelError("", "Role update failed. Please try again.");
             }
 
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_Edit", model);
+            }
+
             return View(model);
         }
 
@@ -169,6 +195,11 @@ namespace Warehouse_CMS.Controllers
                 RoleName = identityRole.Name,
                 Description = employeeRole?.Description ?? "",
             };
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_Delete", viewModel);
+            }
 
             return View(viewModel);
         }
@@ -233,6 +264,11 @@ namespace Warehouse_CMS.Controllers
                     })
                     .ToList(),
             };
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_ManageUsers", viewModel);
+            }
 
             return View(viewModel);
         }

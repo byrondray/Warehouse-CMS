@@ -1,0 +1,63 @@
+@model Warehouse_CMS.Models.ViewModels.RolesIndexViewModel
+
+@{
+    ViewData["Title"] = "Roles Management";
+}
+
+<h1>Roles Management</h1>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Create New Role</a>
+</p>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h4>System Roles</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Role Name</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var role in Model.IdentityRoles)
+                {
+                    var employeeRole = Model.EmployeeRoles.FirstOrDefault(er => er.Role == role.Name);
+                    <tr>
+                        <td>@role.Name</td>
+                        <td>@(employeeRole?.Description ?? "No description available")</td>
+                        <td>
+                            <div class="btn-group">
+                                <a asp-action="Edit" asp-route-id="@role.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <a asp-action="ManageUsers" asp-route-id="@role.Id"
+                                    class="btn btn-sm btn-outline-info">Manage Users</a>
+                                <a asp-action="Delete" asp-route-id="@role.Id"
+                                    class="btn btn-sm btn-outline-danger">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
