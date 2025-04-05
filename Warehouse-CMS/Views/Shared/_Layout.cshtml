@@ -60,11 +60,15 @@
         $(document).ready(function () {
             let requestCounter = 0;
 
-            $('a[href^="/"]:not([data-spa]), a[href^="' + window.location.origin + '"]:not([data-spa])')
-                .not('[href^="#"]')
-                .not('[href*="/Identity/"]')
-                .not('[target="_blank"]')
-                .attr('data-spa', 'true');
+            function markLinksForSpa() {
+                $('a[href^="/"]:not([data-spa]), a[href^="' + window.location.origin + '"]:not([data-spa])')
+                    .not('[href^="#"]')
+                    .not('[href*="/Identity/"]')
+                    .not('[target="_blank"]')
+                    .attr('data-spa', 'true');
+            }
+
+            markLinksForSpa();
 
             $(document).on('click', 'a[data-spa="true"]', function (e) {
                 e.preventDefault();
@@ -101,6 +105,7 @@
                         } else {
                             $('#content-container').html(response);
                             reattachValidation();
+                            markLinksForSpa();
                         }
                     },
                     error: function (xhr, status, error) {
@@ -117,7 +122,7 @@
                                 $(`[data-valmsg-for="${key}"]`).text(errors[key]);
                             }
                         } else {
-                            $('#content-container').html('Error processing your request. Please try again.');
+                            $('#content-container').html('<div class="alert alert-danger">Error processing your request. Please try again.</div>');
                         }
                     }
                 });
@@ -147,23 +152,19 @@
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     success: function (data) {
                         try {
-                            var $temp = $('<div></div>').html(data);
+                            if (typeof data === 'string' && data.indexOf('<html') >= 0) {
+                                var $temp = $('<div></div>').html(data);
+                                var $content = $temp.find('#content-container').html();
 
-                            var $content = $temp.find('#content-container').html();
-
-                            if ($content) {
-                                $('#content-container').html($content);
-                            } else if ($temp.find('nav.navbar').length > 0) {
-                                var mainContent = data.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
-                                if (mainContent && mainContent[1]) {
-                                    var contentContainerMatch = mainContent[1].match(/<div\s+id="content-container"[^>]*>([\s\S]*?)<\/div>/i);
-                                    if (contentContainerMatch && contentContainerMatch[1]) {
-                                        $('#content-container').html(contentContainerMatch[1]);
-                                    } else {
-                                        $('#content-container').html(mainContent[1]);
-                                    }
+                                if ($content) {
+                                    $('#content-container').html($content);
                                 } else {
-                                    $('#content-container').html(data);
+                                    var $main = $temp.find('main').html();
+                                    if ($main) {
+                                        $('#content-container').html($main);
+                                    } else {
+                                        $('#content-container').html(data);
+                                    }
                                 }
                             } else {
                                 $('#content-container').html(data);
@@ -171,23 +172,15 @@
 
                             console.log("Content loaded successfully");
                             reattachValidation();
-
-                            $('#content-container a[href^="/"]:not([data-spa]), #content-container a[href^="' + window.location.origin + '"]:not([data-spa])')
-                                .not('[href^="#"]')
-                                .not('[href^="javascript"]')
-                                .not('[href^="mailto"]')
-                                .not('[target="_blank"]')
-                                .not('[href*="/Identity/"]')
-                                .attr('data-spa', 'true');
+                            markLinksForSpa();
                         } catch (e) {
                             console.error("Error processing content:", e);
-                            $('#content-container').html(data);
+                            $('#content-container').html('<div class="alert alert-danger">Error processing content. Please try again.</div>');
                         }
                     },
                     error: function (xhr, status, error) {
                         console.error("Content loading error:", error, "Status code:", xhr.status);
 
-                        // Handle 401 (Unauthorized) or 403 (Forbidden) errors
                         if (xhr.status === 401 || xhr.status === 403) {
                             window.location.href = '/Identity/Account/AccessDenied';
                             return;
@@ -230,15 +223,6 @@
 
             console.log("SPA initialized at: " + new Date().toISOString());
 
-            if (!window.location.hash) {
-                $('a[href^="/"]:not([data-spa]), a[href^="' + window.location.origin + '"]:not([data-spa])')
-                    .not('[href^="#"]')
-                    .not('[href*="/Identity/"]')
-                    .not('[target="_blank"]')
-                    .attr('data-spa', 'true');
-                console.log("Added data-spa attribute to " + $('a[data-spa="true"]').length + " initial links");
-            }
-
             function onRoute() {
                 const path = window.location.hash.replace("#", "");
 
@@ -254,6 +238,7 @@
                     success: function (data) {
                         $('#content-container').html(data);
                         reattachValidation();
+                        markLinksForSpa();
                     },
                     error: function (xhr, status, error) {
                         console.error("Hash navigation error:", error, "Status code:", xhr.status);

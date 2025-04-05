@@ -10,7 +10,10 @@ namespace Warehouse_CMS.Attributes
 
         public void OnActionExecuted(ActionExecutedContext context)
         {
-            if (context.HttpContext.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            if (
+                context.HttpContext.Request.Headers["X-Requested-With"] == "XMLHttpRequest"
+                && !context.HttpContext.Response.Headers.ContainsKey("X-IsVirtualDom")
+            )
             {
                 context.HttpContext.Response.Headers.Add("X-IsVirtualDom", "true");
             }

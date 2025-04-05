@@ -36,15 +36,7 @@ namespace Warehouse_CMS.Attributes
                 }
                 else if (context.Result is ViewResult viewResult)
                 {
-                    var originalLayout = viewResult.ViewData["Layout"];
-
                     viewResult.ViewData["Layout"] = null;
-
-                    await next();
-
-                    viewResult.ViewData["Layout"] = originalLayout;
-
-                    return;
                 }
             }
 
