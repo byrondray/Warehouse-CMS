@@ -38,30 +38,7 @@
     </div>
 
     <div class="mt-3">
-        <a href="@Url.Action("Edit", "Product", new { id = Model.Id })" class="btn btn-warning" data-spa="true">Edit</a>
-        <a href="@Url.Action("Index", "Product")" class="btn btn-secondary" data-spa="true">Back to List</a>
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
     </div>
 </div>
-
-<script>
-    $(document).ready(function () {
-        $('a[data-spa="true"]').on('click', function (e) {
-            e.preventDefault();
-            var url = $(this).attr('href');
-
-            window.history.pushState({ path: url }, '', url);
-
-            $.ajax({
-                url: url,
-                type: 'GET',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                success: function (data) {
-                    $('#content-container').html(data);
-                },
-                error: function (xhr, status, error) {
-                    $('#content-container').html('Error loading content. Please try again.');
-                }
-            });
-        });
-    });
-</script>

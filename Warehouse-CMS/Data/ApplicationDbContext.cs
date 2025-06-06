@@ -70,6 +70,13 @@ namespace Warehouse_CMS.Data
                 .HasOne(i => i.Product)
                 .WithMany(p => p.OrderItems)
                 .HasForeignKey(i => i.ProductId);
+
+            // Configure decimal precision to fix warnings
+            modelBuilder.Entity<Product>().Property(p => p.Price).HasPrecision(18, 2);
+
+            modelBuilder.Entity<Order>().Property(o => o.TotalAmount).HasPrecision(18, 2);
+
+            modelBuilder.Entity<OrderItem>().Property(oi => oi.UnitPrice).HasPrecision(18, 2);
         }
     }
 }

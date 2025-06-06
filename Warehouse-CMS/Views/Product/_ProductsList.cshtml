@@ -3,7 +3,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Products</h1>
-        <a href="@Url.Action("Create", "Product")" class="btn btn-primary" data-spa="true">Create New Product</a>
+        <a asp-controller="Product" asp-action="Create" class="btn btn-primary">Create New Product</a>
     </div>
 
     <table class="table table-striped">
@@ -28,12 +28,9 @@
                     <td>@item.StockQuantity</td>
                     <td>
                         <div class="btn-group" role="group">
-                            <a href="@Url.Action("Details", "Product", new { id = item.Id })" class="btn btn-info btn-sm"
-                                data-spa="true">Details</a>
-                            <a href="@Url.Action("Edit", "Product", new { id = item.Id })" class="btn btn-warning btn-sm"
-                                data-spa="true">Edit</a>
-                            <a href="@Url.Action("Delete", "Product", new { id = item.Id })" class="btn btn-danger btn-sm"
-                                data-spa="true">Delete</a>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Details</a>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Edit</a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Delete</a>
                         </div>
                     </td>
                 </tr>
@@ -41,16 +38,3 @@
         </tbody>
     </table>
 </div>
-
-<script>
-    $(document).ready(function () {
-        $('a[data-spa="true"]').on('click', function (e) {
-            e.preventDefault();
-            var url = $(this).attr('href');
-
-            window.history.pushState({ path: url }, '', url);
-
-            $('#content-container').load(url);
-        });
-    });
-</script>

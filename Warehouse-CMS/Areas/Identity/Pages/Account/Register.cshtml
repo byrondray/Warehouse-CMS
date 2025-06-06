@@ -4,81 +4,263 @@
     ViewData["Title"] = "Register";
 }
 
-<h1>@ViewData["Title"]</h1>
-
-<div class="row">
-    <div class="col-md-6">
-        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <h2>Create a new account</h2>
-            <hr />
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true"
-                    placeholder="name@example.com" />
-                <label asp-for="Input.Email">Email</label>
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="text-center mb-5">
+                <i class="bi bi-person-plus-fill fs-1 text-primary"></i>
+                <h1 class="display-5 fw-bold mt-3">Join Our Team</h1>
+                <p class="text-muted lead">Create your employee account to start managing warehouse operations</p>
             </div>
 
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true"
-                    placeholder="password" />
-                <label asp-for="Input.Password">Password</label>
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            <div class="row g-4">
+                <!-- Registration Form Card -->
+                <div class="col-md-7">
+                    <div class="card shadow-sm">
+                        <div class="card-body p-4">
+                            <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"
+                                    style="display: none;"></div>
+
+                                <!-- Account Information Section -->
+                                <div class="mb-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <i class="bi bi-shield-lock fs-4 text-primary me-2"></i>
+                                        <h4 class="mb-0">Account Information</h4>
+                                    </div>
+
+                                    <div class="form-floating mb-3">
+                                        <input asp-for="Input.Email" class="form-control" autocomplete="username"
+                                            aria-required="true" placeholder="name@example.com" />
+                                        <label asp-for="Input.Email">
+                                            <i class="bi bi-envelope me-1"></i> Email
+                                        </label>
+                                        <span asp-validation-for="Input.Email" class="text-danger"></span>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input asp-for="Input.Password" class="form-control"
+                                                    autocomplete="new-password" aria-required="true"
+                                                    placeholder="password" />
+                                                <label asp-for="Input.Password">
+                                                    <i class="bi bi-lock me-1"></i> Password
+                                                </label>
+                                                <span asp-validation-for="Input.Password" class="text-danger"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input asp-for="Input.ConfirmPassword" class="form-control"
+                                                    autocomplete="new-password" aria-required="true"
+                                                    placeholder="password" />
+                                                <label asp-for="Input.ConfirmPassword">
+                                                    <i class="bi bi-lock-fill me-1"></i> Confirm
+                                                </label>
+                                                <span asp-validation-for="Input.ConfirmPassword"
+                                                    class="text-danger"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr class="my-4" />
+
+                                <!-- Employee Information Section -->
+                                <div class="mb-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <i class="bi bi-person-badge fs-4 text-success me-2"></i>
+                                        <h4 class="mb-0">Employee Information</h4>
+                                    </div>
+
+                                    <div class="form-floating mb-3">
+                                        <input asp-for="Input.Name" class="form-control" aria-required="true"
+                                            placeholder="John Doe" />
+                                        <label asp-for="Input.Name">
+                                            <i class="bi bi-person me-1"></i> Full Name
+                                        </label>
+                                        <span asp-validation-for="Input.Name" class="text-danger"></span>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <input asp-for="Input.StartDate" class="form-control"
+                                                    aria-required="true" type="date" />
+                                                <label asp-for="Input.StartDate">
+                                                    <i class="bi bi-calendar-event me-1"></i> Start Date
+                                                </label>
+                                                <span asp-validation-for="Input.StartDate" class="text-danger"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <select asp-for="Input.EmployeeRoleId" asp-items="Model.AvailableRoles"
+                                                    class="form-select">
+                                                    <option value="">-- Select Role --</option>
+                                                </select>
+                                                <label asp-for="Input.EmployeeRoleId">
+                                                    <i class="bi bi-briefcase me-1"></i> Role
+                                                </label>
+                                                <span asp-validation-for="Input.EmployeeRoleId"
+                                                    class="text-danger"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button id="registerSubmit" type="submit" class="btn btn-primary btn-lg w-100">
+                                    <i class="bi bi-person-check me-2"></i> Create Account
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="card-footer bg-light text-center py-3">
+                            <span class="text-muted">Already have an account?</span>
+                            <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl"
+                                class="text-decoration-none fw-semibold ms-1">
+                                Sign in here
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Benefits Card -->
+                <div class="col-md-5">
+                    <div class="card shadow-sm h-100 bg-light">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-4">
+                                <i class="bi bi-award fs-3 text-warning me-3"></i>
+                                <h3 class="mb-0">Employee Benefits</h3>
+                            </div>
+
+                            <p class="text-muted mb-4">
+                                Join our warehouse management team and gain access to powerful tools:
+                            </p>
+
+                            <div class="benefit-item mb-3">
+                                <div class="d-flex align-items-start">
+                                    <i class="bi bi-check-circle-fill text-success me-3 mt-1"></i>
+                                    <div>
+                                        <h6 class="mb-1">Process Orders Efficiently</h6>
+                                        <p class="text-muted small mb-0">Handle customer orders with our streamlined
+                                            order management system</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="benefit-item mb-3">
+                                <div class="d-flex align-items-start">
+                                    <i class="bi bi-check-circle-fill text-success me-3 mt-1"></i>
+                                    <div>
+                                        <h6 class="mb-1">Manage Inventory</h6>
+                                        <p class="text-muted small mb-0">Keep track of stock levels and receive low
+                                            inventory alerts</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="benefit-item mb-3">
+                                <div class="d-flex align-items-start">
+                                    <i class="bi bi-check-circle-fill text-success me-3 mt-1"></i>
+                                    <div>
+                                        <h6 class="mb-1">Access Role-Based Reports</h6>
+                                        <p class="text-muted small mb-0">View customized reports and analytics based on
+                                            your assigned role</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-warning border-0 mt-4">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <small>Your role determines your system access level. Choose carefully during
+                                        registration.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-floating mb-3">
-                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password"
-                    aria-required="true" placeholder="password" />
-                <label asp-for="Input.ConfirmPassword">Confirm Password</label>
-                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+            <!-- Terms Notice -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="text-center text-muted small">
+                        <p class="mb-0">
+                            By creating an account, you agree to our
+                            <a href="#" class="text-decoration-none">Terms of Service</a> and
+                            <a href="#" class="text-decoration-none">Privacy Policy</a>
+                        </p>
+                    </div>
+                </div>
             </div>
-
-            <hr />
-            <h4>Employee Information</h4>
-
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Name" class="form-control" aria-required="true" placeholder="John Doe" />
-                <label asp-for="Input.Name">Full Name</label>
-                <span asp-validation-for="Input.Name" class="text-danger"></span>
-            </div>
-
-            <div class="form-floating mb-3">
-                <input asp-for="Input.StartDate" class="form-control" aria-required="true" type="date" />
-                <label asp-for="Input.StartDate">Start Date</label>
-                <span asp-validation-for="Input.StartDate" class="text-danger"></span>
-            </div>
-
-            <div class="form-floating mb-3">
-                <select asp-for="Input.EmployeeRoleId" asp-items="Model.AvailableRoles" class="form-select">
-                    <option value="">-- Select Role --</option>
-                </select>
-                <label asp-for="Input.EmployeeRoleId">Role</label>
-                <span asp-validation-for="Input.EmployeeRoleId" class="text-danger"></span>
-            </div>
-
-            <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-        </form>
-    </div>
-    <div class="col-md-6">
-        <section>
-            <h3>Employee Registration</h3>
-            <hr />
-            <p>
-                Registering as an employee will allow you to:
-            </p>
-            <ul>
-                <li>Process customer orders</li>
-                <li>Manage inventory</li>
-                <li>View reports based on your role</li>
-            </ul>
-            <p>
-                Select your role carefully as it determines your access level in the system.
-            </p>
-        </section>
+        </div>
     </div>
 </div>
 
+<style>
+    /* Custom styles for the register page */
+    .card {
+        border: none;
+        transition: transform 0.2s;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #1b6ec2;
+        box-shadow: 0 0 0 0.2rem rgba(27, 110, 194, 0.25);
+    }
+
+    .benefit-item {
+        transition: all 0.3s ease;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+    }
+
+    .benefit-item:hover {
+        background-color: rgba(27, 110, 194, 0.05);
+    }
+
+    /* Show validation summary only when it has content */
+    .validation-summary-errors {
+        display: block !important;
+    }
+
+    /* Custom date input styling */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        opacity: 0.6;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator:hover {
+        opacity: 1;
+    }
+</style>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            // Set default date to today
+            if (!$('#Input_StartDate').val()) {
+                $('#Input_StartDate').val(new Date().toISOString().split('T')[0]);
+            }
+
+            // Enhance form submission
+            $('#registerForm').on('submit', function () {
+                var $btn = $('#registerSubmit');
+                if ($(this).valid()) {
+                    $btn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Creating account...').prop('disabled', true);
+                }
+            });
+
+            // Password strength indicator removed due to Razor parser conflicts
+        });
+    </script>
 }

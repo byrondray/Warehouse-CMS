@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -13,32 +15,33 @@
 </head>
 
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index" data-spa="true">Warehouse
-                    Manager</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
-                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li><a class="nav-link text-dark" asp-controller="Product" asp-action="Index"
-                                data-spa="true">Products</a></li>
-                        <li><a class="nav-link text-dark" asp-controller="Order" asp-action="Index"
-                                data-spa="true">Orders</a></li>
-                        <li class="nav-item" asp-authorize asp-roles="Admin,Manager">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Roles" asp-action="Index"
-                                data-spa="true">Roles</a>
-                        </li>
-                    </ul>
-                    <partial name="_LoginPartial" />
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <header>
+            <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+                <div class="container-fluid">
+                    <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Warehouse
+                        Manager</a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        <ul class="navbar-nav flex-grow-1">
+                            <li><a class="nav-link text-dark" asp-controller="Product" asp-action="Index">Products</a></li>
+                            <li><a class="nav-link text-dark" asp-controller="Order" asp-action="Index">Orders</a></li>
+                            <li class="nav-item" asp-authorize asp-roles="Admin,Manager">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Roles"
+                                    asp-action="Index">Roles</a>
+                            </li>
+                        </ul>
+                        <partial name="_LoginPartial" />
+                    </div>
                 </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
+            </nav>
+        </header>
+    }
+    <div class="container @(SignInManager.IsSignedIn(User) ? "" : "mt-5")">
         <main role="main" class="pb-3">
             <div id="content-container">
                 @RenderBody()
@@ -48,37 +51,49 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2025 - Warehouse_CMS - <a asp-area="" asp-controller="Home" asp-action="Privacy"
-                data-spa="true">Privacy</a>
+            &copy; 2025 - Warehouse_CMS - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="https://unpkg.com/apprun@latest/dist/apprun-html.js"></script>
     <script>
         $(document).ready(function () {
+            // Prevent duplicate initialization
+            if (window.spaInitialized) {
+                console.log("SPA already initialized, skipping");
+                return;
+            }
+            window.spaInitialized = true;
+
             let requestCounter = 0;
 
-            $('a[href^="/"]:not([data-spa]), a[href^="' + window.location.origin + '"]:not([data-spa])')
-                .not('[href^="#"]')
-                .not('[href*="/Identity/"]')
-                .not('[target="_blank"]')
-                .attr('data-spa', 'true');
+            // Simple, robust event delegation for SPA navigation
+            $(document).on('click', 'a[href^="/"]', function (e) {
+                var $link = $(this);
+                var url = $link.attr('href');
 
-            $(document).on('click', 'a[data-spa="true"]', function (e) {
-                e.preventDefault();
-                var url = $(this).attr('href');
+                console.log("Link clicked:", url, "Link text:", $link.text().trim());
 
-                if (url.includes("/Identity/")) {
-                    window.location.href = url;
-                    return;
+                // Skip certain types of links
+                if (url.includes("/Identity/") ||
+                    $link.attr('target') === '_blank' ||
+                    $link.hasClass('no-spa')) {
+                    console.log("Skipping SPA for:", url);
+                    return true; // Let default behavior happen
                 }
 
+                console.log("Processing SPA navigation to:", url);
+                e.preventDefault();
+                navigateToUrl(url);
+                return false;
+            });
+
+            function navigateToUrl(url) {
                 console.log("SPA navigation to: " + url);
                 window.history.pushState({ path: url }, '', url);
                 loadContent(url);
-            });
+            }
 
             $(document).on('submit', 'form:not([action*="Identity"])', function (e) {
                 e.preventDefault();
@@ -124,7 +139,7 @@
             });
 
             $(window).on('popstate', function (e) {
-                var url = window.location.href;
+                var url = window.location.pathname;
                 console.log("Popstate navigation to: " + url);
 
                 if (url.includes("/Identity/")) {
@@ -137,7 +152,7 @@
 
             function loadContent(url) {
                 requestCounter++;
-                console.log(`Request #${requestCounter} to ${url}`);
+                console.log(`Loading content #${requestCounter} from: ${url}`);
 
                 $('#content-container').html('<div class="text-center mt-5"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>');
 
@@ -145,76 +160,65 @@
                     url: url,
                     type: 'GET',
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    success: function (data) {
+                    timeout: 10000,
+                    success: function (data, textStatus, xhr) {
+                        console.log("AJAX success, status:", xhr.status, "Content length:", data.length);
                         try {
-                            var $temp = $('<div></div>').html(data);
-
-                            var $content = $temp.find('#content-container').html();
-
-                            if ($content) {
-                                $('#content-container').html($content);
-                            } else if ($temp.find('nav.navbar').length > 0) {
-                                var mainContent = data.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
-                                if (mainContent && mainContent[1]) {
-                                    var contentContainerMatch = mainContent[1].match(/<div\s+id="content-container"[^>]*>([\s\S]*?)<\/div>/i);
-                                    if (contentContainerMatch && contentContainerMatch[1]) {
-                                        $('#content-container').html(contentContainerMatch[1]);
-                                    } else {
-                                        $('#content-container').html(mainContent[1]);
-                                    }
-                                } else {
-                                    $('#content-container').html(data);
-                                }
-                            } else {
-                                $('#content-container').html(data);
-                            }
-
-                            console.log("Content loaded successfully");
+                            // Simple approach: replace content directly
+                            $('#content-container').html(data);
+                            console.log("Content loaded and replaced successfully");
                             reattachValidation();
-
-                            $('#content-container a[href^="/"]:not([data-spa]), #content-container a[href^="' + window.location.origin + '"]:not([data-spa])')
-                                .not('[href^="#"]')
-                                .not('[href^="javascript"]')
-                                .not('[href^="mailto"]')
-                                .not('[target="_blank"]')
-                                .not('[href*="/Identity/"]')
-                                .attr('data-spa', 'true');
                         } catch (e) {
                             console.error("Error processing content:", e);
-                            $('#content-container').html(data);
+                            $('#content-container').html('<div class="alert alert-danger">Error processing content: ' + e.message + '</div>');
                         }
                     },
                     error: function (xhr, status, error) {
-                        console.error("Content loading error:", error, "Status code:", xhr.status);
+                        console.error("AJAX error:", status, error, "Status code:", xhr.status);
 
-                        // Handle 401 (Unauthorized) or 403 (Forbidden) errors
                         if (xhr.status === 401 || xhr.status === 403) {
                             window.location.href = '/Identity/Account/AccessDenied';
                             return;
                         }
 
-                        $('#content-container').html('<div class="alert alert-danger">Error loading content. Please try again.</div>');
+                        $('#content-container').html('<div class="alert alert-danger">Error loading content. Status: ' + xhr.status + ', Error: ' + error + '</div>');
                     }
                 });
             }
 
             function reattachValidation() {
+                console.log("Reattaching validation and bootstrap components");
+
+                // Re-parse validation for new forms
                 if (typeof $.validator !== 'undefined') {
-                    $.validator.unobtrusive.parse('form');
+                    $.validator.unobtrusive.parse('#content-container');
                 }
 
+                // Re-initialize Bootstrap components
                 if (typeof bootstrap !== 'undefined') {
-                    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                    // Dispose existing tooltips/popovers first
+                    $('#content-container [data-bs-toggle="tooltip"]').each(function () {
+                        var tooltip = bootstrap.Tooltip.getInstance(this);
+                        if (tooltip) tooltip.dispose();
+                    });
+                    $('#content-container [data-bs-toggle="popover"]').each(function () {
+                        var popover = bootstrap.Popover.getInstance(this);
+                        if (popover) popover.dispose();
+                    });
+
+                    // Initialize new ones
+                    var tooltipTriggerList = [].slice.call(document.querySelectorAll('#content-container [data-bs-toggle="tooltip"]'));
                     tooltipTriggerList.map(function (tooltipTriggerEl) {
                         return new bootstrap.Tooltip(tooltipTriggerEl);
                     });
 
-                    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+                    var popoverTriggerList = [].slice.call(document.querySelectorAll('#content-container [data-bs-toggle="popover"]'));
                     popoverTriggerList.map(function (popoverTriggerEl) {
                         return new bootstrap.Popover(popoverTriggerEl);
                     });
 
-                    var alertList = [].slice.call(document.querySelectorAll('.alert:not(.alert-initialized)'));
+                    // Handle alerts
+                    var alertList = [].slice.call(document.querySelectorAll('#content-container .alert:not(.alert-initialized)'));
                     alertList.forEach(function (alert) {
                         alert.classList.add('alert-initialized');
                         setTimeout(function () {
@@ -228,53 +232,44 @@
                 $(document).trigger('content-updated');
             }
 
-            console.log("SPA initialized at: " + new Date().toISOString());
+            console.log("jQuery SPA initialized at: " + new Date().toISOString());
 
-            if (!window.location.hash) {
-                $('a[href^="/"]:not([data-spa]), a[href^="' + window.location.origin + '"]:not([data-spa])')
-                    .not('[href^="#"]')
-                    .not('[href*="/Identity/"]')
-                    .not('[target="_blank"]')
-                    .attr('data-spa', 'true');
-                console.log("Added data-spa attribute to " + $('a[data-spa="true"]').length + " initial links");
-            }
-
-            function onRoute() {
-                const path = window.location.hash.replace("#", "");
-
-                if (path.includes("Identity/")) {
-                    window.location.href = '/' + path;
-                    return;
-                }
-
-                $.ajax({
-                    url: path ? '/Pages/' + path : '/Home?route=true',
-                    type: 'GET',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    success: function (data) {
-                        $('#content-container').html(data);
-                        reattachValidation();
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("Hash navigation error:", error, "Status code:", xhr.status);
-
-                        if (xhr.status === 401 || xhr.status === 403) {
-                            window.location.href = '/Identity/Account/AccessDenied';
-                            return;
-                        }
-
-                        $('#content-container').html('Page Not Found.');
+            // Handle hash-based URLs immediately and consistently
+            function handleHashUrl() {
+                var hash = window.location.hash;
+                console.log("handleHashUrl called, full URL:", window.location.href, "hash:", hash);
+                if (hash && hash.length > 1) {
+                    var path = hash.substring(1); // Remove the #
+                    if (!path.startsWith('/')) {
+                        path = '/' + path; // Ensure it starts with /
                     }
-                });
+                    console.log("Converting hash URL to clean path:", path);
+                    // Clear the hash and navigate
+                    window.history.replaceState({ path: path }, '', path);
+                    loadContent(path);
+                    return true;
+                }
+                return false;
             }
 
-            window.onhashchange = () => {
-                onRoute();
-            };
-
-            if (window.location.hash) {
-                onRoute();
+            // Handle hash changes and initial hash
+            function checkForHash() {
+                if (window.location.hash) {
+                    console.log("Hash found:", window.location.hash);
+                    handleHashUrl();
+                } else {
+                    console.log("No hash in URL");
+                }
             }
+
+            // Check immediately on page load
+            checkForHash();
+
+            // Also handle hash changes
+            $(window).on('hashchange', function () {
+                console.log("Hash change event triggered");
+                checkForHash();
+            });
         });
     </script>
     @await RenderSectionAsync("Scripts", required: false)

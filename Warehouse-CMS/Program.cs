@@ -1,47 +1,45 @@
+using System;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.SqlServer;
-using Warehouse_CMS.Attributes;
 using Warehouse_CMS.Data;
 using Warehouse_CMS.Models;
 using Warehouse_CMS.Repositories;
 using Warehouse_CMS.Repositories.Implementation;
 using Warehouse_CMS.Services;
+using Warehouse_CMS.ViewModels;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var environment = builder.Environment.EnvironmentName;
 Console.WriteLine($"Current environment: {environment}");
 
-var connectionString =
-    builder.Configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING")
-    ?? throw new InvalidOperationException(
-        "Connection string 'AZURE_SQL_CONNECTIONSTRING' not found."
-    );
-
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    // if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
-    // {
-    //     options
-    //         .UseMySql(
-    //             connectionString,
-    //             ServerVersion.AutoDetect(connectionString),
-    //             mySqlOptions => mySqlOptions.EnableRetryOnFailure()
-    //         )
-    //         .EnableSensitiveDataLogging();
-    // }
-    // else
-    // {
-    //     options.UseMySql(
-    //         connectionString,
-    //         ServerVersion.AutoDetect(connectionString),
-    //         mySqlOptions => mySqlOptions.EnableRetryOnFailure()
-    //     );
-    // }
+    if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
+    {
+        // Use LocalDB for development
+        var connectionString =
+            builder.Configuration.GetConnectionString("DefaultConnection")
+            ?? "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=WarehouseCMS;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False";
 
-    options.UseSqlServer(connectionString);
+        options.UseSqlServer(connectionString).EnableSensitiveDataLogging();
+    }
+    else
+    {
+        // Use Azure SQL for production
+        var connectionString =
+            builder.Configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING")
+            ?? throw new InvalidOperationException(
+                "Connection string 'AZURE_SQL_CONNECTIONSTRING' not found."
+            );
+
+        options.UseSqlServer(connectionString);
+    }
 });
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -88,6 +86,24 @@ builder
         options.CallbackPath = "/signin-google";
     });
 
+// Configure external authentication cookies
+builder.Services.ConfigureExternalCookie(options =>
+{
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(15); // Give enough time for user to fill form
+    options.SlidingExpiration = false; // Don't extend on activity, user should complete registration
+
+    if (!builder.Environment.IsDevelopment())
+    {
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.HttpOnly = true;
+    }
+    else
+    {
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    }
+});
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Identity/Account/Login";
@@ -98,14 +114,21 @@ builder.Services.ConfigureApplicationCookie(options =>
     if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
     {
         options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     }
     else if (builder.Environment.IsStaging())
     {
         options.ExpireTimeSpan = TimeSpan.FromHours(2);
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.HttpOnly = true;
     }
     else
     {
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.HttpOnly = true;
     }
 });
 
@@ -124,12 +147,7 @@ builder.Services.AddScoped<IEmployeeIdentityRepository, EmployeeIdentityReposito
 
 builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
 
-// Update the MVC service registration to include the SPA filters
-builder.Services.AddControllersWithViews(options =>
-{
-    // Register the SPA action filter
-    options.Filters.Add<SpaActionFilter>();
-});
+builder.Services.AddControllersWithViews();
 
 builder.Services.AddRazorPages();
 

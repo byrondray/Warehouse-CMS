@@ -157,15 +157,97 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
         public async Task<IActionResult> OnPostConfirmationAsync(string returnUrl = null)
         {
             returnUrl = returnUrl ?? Url.Content("~/");
+
+            _logger.LogInformation(
+                "OnPostConfirmationAsync called with returnUrl: {ReturnUrl}",
+                returnUrl
+            );
+
             var info = await _signInManager.GetExternalLoginInfoAsync();
             if (info == null)
             {
+                _logger.LogWarning(
+                    "External login info is null during confirmation. User email from form: {Email}",
+                    Input?.Email
+                );
+
+                // Check if user already exists with this email
+                if (!string.IsNullOrEmpty(Input?.Email))
+                {
+                    var existingUser = await _userManager.FindByEmailAsync(Input.Email);
+                    if (existingUser != null)
+                    {
+                        _logger.LogWarning(
+                            "User with email {Email} already exists but trying to register with external provider",
+                            Input.Email
+                        );
+                        ErrorMessage =
+                            "An account with this email already exists. Please sign in with your password instead, or contact support to link your Google account.";
+                        return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
+                    }
+                }
+
                 ErrorMessage = "Error loading external login information during confirmation.";
                 return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
             }
 
+            _logger.LogInformation(
+                "External login info found. Provider: {Provider}, Email: {Email}",
+                info.LoginProvider,
+                info.Principal.FindFirstValue(ClaimTypes.Email)
+            );
+
             if (ModelState.IsValid)
             {
+                // Double-check for existing user before creating new account
+                var existingUser = await _userManager.FindByEmailAsync(Input.Email);
+                if (existingUser != null)
+                {
+                    _logger.LogWarning(
+                        "Attempted to create account for existing user {Email} via external provider {Provider}",
+                        Input.Email,
+                        info.LoginProvider
+                    );
+
+                    // Check if this user already has this external login
+                    var existingLogins = await _userManager.GetLoginsAsync(existingUser);
+                    if (existingLogins.Any(l => l.LoginProvider == info.LoginProvider))
+                    {
+                        _logger.LogInformation(
+                            "User {Email} already has {Provider} login, attempting sign in",
+                            Input.Email,
+                            info.LoginProvider
+                        );
+
+                        await _signInManager.SignInAsync(
+                            existingUser,
+                            isPersistent: false,
+                            info.LoginProvider
+                        );
+                        return LocalRedirect(returnUrl);
+                    }
+                    else
+                    {
+                        ModelState.AddModelError(
+                            string.Empty,
+                            $"An account with the email address {Input.Email} already exists. "
+                                + "Please sign in with your existing credentials first, then you can link your Google account in your profile settings."
+                        );
+
+                        AvailableRoles = _employeeRoleRepository
+                            .GetAll()
+                            .Select(r => new SelectListItem
+                            {
+                                Value = r.Id.ToString(),
+                                Text = r.Role,
+                            });
+
+                        ProviderDisplayName = info.ProviderDisplayName;
+                        ReturnUrl = returnUrl;
+                        return Page();
+                    }
+                }
+
                 var user = CreateUser();
 
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
