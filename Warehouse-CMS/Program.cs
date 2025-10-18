@@ -20,9 +20,17 @@ Console.WriteLine($"Current environment: {environment}");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+    if (!string.IsNullOrEmpty(databaseUrl))
     {
-        // Use LocalDB for development
+        var uri = new Uri(databaseUrl);
+        var connectionString =
+            $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={uri.UserInfo.Split(':')[0]};Password={uri.UserInfo.Split(':')[1]};SSL Mode=Require;Trust Server Certificate=true";
+        options.UseNpgsql(connectionString);
+    }
+    else if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
+    {
         var connectionString =
             builder.Configuration.GetConnectionString("DefaultConnection")
             ?? "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=WarehouseCMS;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False";
@@ -31,7 +39,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     }
     else
     {
-        // Use Azure SQL for production
         var connectionString =
             builder.Configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING")
             ?? throw new InvalidOperationException(
@@ -76,15 +83,20 @@ builder
     .AddDefaultTokenProviders()
     .AddDefaultUI();
 
-builder
-    .Services.AddAuthentication()
-    .AddGoogle(options =>
+var authBuilder = builder.Services.AddAuthentication();
+
+var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
+var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+
+if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))
+{
+    authBuilder.AddGoogle(options =>
     {
-        IConfiguration configuration = builder.Configuration;
-        options.ClientId = configuration["Authentication:Google:ClientId"];
-        options.ClientSecret = configuration["Authentication:Google:ClientSecret"];
+        options.ClientId = googleClientId;
+        options.ClientSecret = googleClientSecret;
         options.CallbackPath = "/signin-google";
     });
+}
 
 // Configure external authentication cookies
 builder.Services.ConfigureExternalCookie(options =>

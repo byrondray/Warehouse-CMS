@@ -64,9 +64,9 @@ public static class SeedDatabase
 
             var customers = new List<Customer>
             {
-                new Customer { Name = "John Doe", CreatedAt = DateTime.Now.AddDays(-30) },
-                new Customer { Name = "Jane Smith", CreatedAt = DateTime.Now.AddDays(-15) },
-                new Customer { Name = "Bob Johnson", CreatedAt = DateTime.Now.AddDays(-5) },
+                new Customer { Name = "John Doe", CreatedAt = DateTime.UtcNow.AddDays(-30) },
+                new Customer { Name = "Jane Smith", CreatedAt = DateTime.UtcNow.AddDays(-15) },
+                new Customer { Name = "Bob Johnson", CreatedAt = DateTime.UtcNow.AddDays(-5) },
             };
             dbContext.Customers.AddRange(customers);
             dbContext.SaveChanges();
@@ -76,13 +76,13 @@ public static class SeedDatabase
                 new Employee
                 {
                     Name = "Alice Brown",
-                    StartDate = DateTime.Now.AddYears(-2),
+                    StartDate = DateTime.UtcNow.AddYears(-2),
                     EmployeeRoleId = 1,
                 },
                 new Employee
                 {
                     Name = "Charlie Davis",
-                    StartDate = DateTime.Now.AddYears(-5),
+                    StartDate = DateTime.UtcNow.AddYears(-5),
                     EmployeeRoleId = 2,
                 },
             };

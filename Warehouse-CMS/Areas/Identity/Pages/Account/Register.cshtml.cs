@@ -92,7 +92,7 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
             [Required]
             [Display(Name = "Start Date")]
             [DataType(DataType.Date)]
-            public DateTime StartDate { get; set; } = DateTime.Today;
+            public DateTime StartDate { get; set; } = DateTime.UtcNow.Date;
 
             [Required]
             [Display(Name = "Employee Role")]
@@ -137,7 +137,7 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                     var employee = new Employee
                     {
                         Name = Input.Name,
-                        StartDate = Input.StartDate,
+                        StartDate = DateTime.SpecifyKind(Input.StartDate, DateTimeKind.Utc),
                         EmployeeRoleId = Input.EmployeeRoleId,
                         UserId = user.Id,
                     };
