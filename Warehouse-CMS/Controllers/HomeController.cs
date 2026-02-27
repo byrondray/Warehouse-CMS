@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Warehouse_CMS.Data;
 using Warehouse_CMS.Models;
 using Warehouse_CMS.Repositories;
 
@@ -10,54 +11,42 @@ namespace Warehouse_CMS.Controllers
     public class HomeController : BaseController
     {
         private readonly ILogger<HomeController> _logger;
-        private readonly IProductRepository _productRepository;
-        private readonly ISupplierRepository _supplierRepository;
-        private readonly IOrderRepository _orderRepository;
-        private readonly IOrderStatusRepository _orderStatusRepository;
+        private readonly IInventoryService _inventoryService;
+        private readonly ApplicationDbContext _dbContext;
 
         private const int LOW_STOCK_THRESHOLD = 5;
 
         public HomeController(
             ILogger<HomeController> logger,
-            IProductRepository productRepository,
-            ISupplierRepository supplierRepository,
-            IOrderRepository orderRepository,
-            IOrderStatusRepository orderStatusRepository
+            IInventoryService inventoryService,
+            ApplicationDbContext dbContext
         )
         {
             _logger = logger;
-            _productRepository = productRepository;
-            _supplierRepository = supplierRepository;
-            _orderRepository = orderRepository;
-            _orderStatusRepository = orderStatusRepository;
+            _inventoryService = inventoryService;
+            _dbContext = dbContext;
         }
 
         public IActionResult Index(bool route = false)
         {
-            var products = _productRepository.GetAll().ToList();
-            var suppliers = _supplierRepository.GetAll().ToList();
-            var orders = _orderRepository.GetAll().ToList();
-            var orderStatuses = _orderStatusRepository.GetAll().ToList();
+            ViewBag.TotalProducts = _dbContext.Products.Count();
 
-            ViewBag.TotalProducts = products.Count;
-
-            var lowStockProducts = products
-                .Where(p => p.StockQuantity < LOW_STOCK_THRESHOLD)
-                .ToList();
+            var lowStockProducts = _inventoryService.GetLowStockProducts(LOW_STOCK_THRESHOLD);
             ViewBag.LowStockCount = lowStockProducts.Count;
             ViewBag.LowStockProducts = lowStockProducts;
 
-            var completedStatusIds = orderStatuses
-                .Where(s => s.Status.ToLower() == "completed" || s.Status.ToLower() == "cancelled")
+            var completedStatusIds = _dbContext
+                .OrderStatuses.Where(s =>
+                    s.Status.ToLower() == "completed" || s.Status.ToLower() == "cancelled"
+                )
                 .Select(s => s.Id)
                 .ToList();
 
-            var activeOrders = orders
-                .Where(o => !completedStatusIds.Contains(o.OrderStatusId))
-                .ToList();
-            ViewBag.ActiveOrders = activeOrders.Count;
+            ViewBag.ActiveOrders = _dbContext.Orders.Count(o =>
+                !completedStatusIds.Contains(o.OrderStatusId)
+            );
 
-            ViewBag.SupplierCount = suppliers.Count;
+            ViewBag.SupplierCount = _dbContext.Suppliers.Count();
 
             if (route)
             {

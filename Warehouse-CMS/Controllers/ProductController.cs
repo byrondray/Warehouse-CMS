@@ -27,20 +27,7 @@ namespace Warehouse_CMS.Controllers
 
         public IActionResult Index()
         {
-            var products = _repository
-                .GetAll()
-                .Select(p => new ProductViewModel
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Description = p.Description,
-                    Price = p.Price,
-                    StockQuantity = p.StockQuantity,
-                    CategoryId = p.CategoryId,
-                    CategoryName = p.Category?.Name,
-                    SupplierId = p.SupplierId,
-                    SupplierName = p.Supplier?.Name,
-                });
+            var products = _repository.GetAll().Select(p => p.ToViewModel());
 
             if (IsAjaxRequest())
             {
@@ -62,18 +49,7 @@ namespace Warehouse_CMS.Controllers
             ViewBag.Category = product.Category?.Name;
             ViewBag.Supplier = product.Supplier?.Name;
 
-            var viewModel = new ProductViewModel
-            {
-                Id = product.Id,
-                Name = product.Name,
-                Description = product.Description,
-                Price = product.Price,
-                StockQuantity = product.StockQuantity,
-                CategoryId = product.CategoryId,
-                CategoryName = product.Category?.Name,
-                SupplierId = product.SupplierId,
-                SupplierName = product.Supplier?.Name,
-            };
+            var viewModel = product.ToViewModel();
 
             if (IsAjaxRequest())
             {
@@ -142,30 +118,19 @@ namespace Warehouse_CMS.Controllers
                 return NotFound();
             }
 
-            var viewModel = new ProductViewModel
-            {
-                Id = product.Id,
-                Name = product.Name,
-                Description = product.Description,
-                Price = product.Price,
-                StockQuantity = product.StockQuantity,
-                CategoryId = product.CategoryId,
-                CategoryName = product.Category?.Name,
-                SupplierId = product.SupplierId,
-                SupplierName = product.Supplier?.Name,
-                CategoryList = new SelectList(
-                    _categoryRepository.GetAll(),
-                    "Id",
-                    "Name",
-                    product.CategoryId
-                ),
-                SupplierList = new SelectList(
-                    _supplierRepository.GetAll(),
-                    "Id",
-                    "Name",
-                    product.SupplierId
-                ),
-            };
+            var viewModel = product.ToViewModel();
+            viewModel.CategoryList = new SelectList(
+                _categoryRepository.GetAll(),
+                "Id",
+                "Name",
+                product.CategoryId
+            );
+            viewModel.SupplierList = new SelectList(
+                _supplierRepository.GetAll(),
+                "Id",
+                "Name",
+                product.SupplierId
+            );
 
             return ViewOrPartial("_EditProduct", viewModel);
         }
@@ -223,18 +188,7 @@ namespace Warehouse_CMS.Controllers
                 return NotFound();
             }
 
-            var viewModel = new ProductViewModel
-            {
-                Id = product.Id,
-                Name = product.Name,
-                Description = product.Description,
-                Price = product.Price,
-                StockQuantity = product.StockQuantity,
-                CategoryId = product.CategoryId,
-                CategoryName = product.Category?.Name,
-                SupplierId = product.SupplierId,
-                SupplierName = product.Supplier?.Name,
-            };
+            var viewModel = product.ToViewModel();
 
             return ViewOrPartial("_DeleteProduct", viewModel);
         }

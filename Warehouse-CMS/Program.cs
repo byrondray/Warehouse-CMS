@@ -237,6 +237,8 @@ app.MapControllerRoute(
 
 app.MapFallbackToController("Index", "Home");
 
+app.MapGet("/health", () => Results.Ok("healthy")).AllowAnonymous();
+
 app.MapRazorPages();
 
 app.Run();

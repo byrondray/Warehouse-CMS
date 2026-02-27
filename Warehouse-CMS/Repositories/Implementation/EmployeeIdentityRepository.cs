@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Warehouse_CMS.Data;
 using Warehouse_CMS.Models;
 
 namespace Warehouse_CMS.Repositories.Implementation
@@ -8,16 +10,19 @@ namespace Warehouse_CMS.Repositories.Implementation
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IEmployeeRoleRepository _employeeRoleRepository;
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly ApplicationDbContext _dbContext;
 
         public EmployeeIdentityRepository(
             IEmployeeRepository employeeRepository,
             IEmployeeRoleRepository employeeRoleRepository,
-            UserManager<IdentityUser> userManager
+            UserManager<IdentityUser> userManager,
+            ApplicationDbContext dbContext
         )
         {
             _employeeRepository = employeeRepository;
             _employeeRoleRepository = employeeRoleRepository;
             _userManager = userManager;
+            _dbContext = dbContext;
         }
 
         public async Task<bool> LinkEmployeeToIdentityUserAsync(int employeeId, string userId)
@@ -64,8 +69,9 @@ namespace Warehouse_CMS.Repositories.Implementation
 
         public async Task<Employee?> GetEmployeeByIdentityUserIdAsync(string userId)
         {
-            var employees = await _employeeRepository.GetAllAsync();
-            return employees.FirstOrDefault(e => e.UserId == userId);
+            return await _dbContext
+                .Employees.Include(e => e.EmployeeRole)
+                .FirstOrDefaultAsync(e => e.UserId == userId);
         }
     }
 }

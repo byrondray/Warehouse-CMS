@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Warehouse_CMS.Models;
+using Warehouse_CMS.ViewModels;
 
 namespace Warehouse_CMS.Controllers
 {
@@ -158,7 +159,7 @@ namespace Warehouse_CMS.Controllers
             }
         }
 
-        public IActionResult StatusCode(int statusCode)
+        public new IActionResult StatusCode(int statusCode)
         {
             if (statusCode == 404)
             {

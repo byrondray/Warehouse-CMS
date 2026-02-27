@@ -1,4 +1,6 @@
-namespace Warehouse_CMS.Models
+using Warehouse_CMS.Models;
+
+namespace Warehouse_CMS.ViewModels
 {
     public class EnvironmentViewModel
     {
