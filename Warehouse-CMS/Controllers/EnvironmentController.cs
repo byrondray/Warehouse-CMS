@@ -42,10 +42,14 @@ namespace Warehouse_CMS.Controllers
                 IsProduction = _environment.IsProduction(),
                 IsTesting = _environment.IsEnvironment("Testing"),
                 ApplicationName = _environment.ApplicationName,
-                ContentRootPath = _environment.ContentRootPath,
-                WebRootPath = _environment.WebRootPath,
-                Settings = _settings,
             };
+
+            if (_environment.IsDevelopment() || _environment.IsEnvironment("Testing"))
+            {
+                viewModel.ContentRootPath = _environment.ContentRootPath;
+                viewModel.WebRootPath = _environment.WebRootPath;
+                viewModel.Settings = _settings;
+            }
 
             return View(viewModel);
         }
@@ -109,6 +113,7 @@ namespace Warehouse_CMS.Controllers
             return View(viewModel);
         }
 
+        [Authorize]
         [ApiController]
         [Route("api/error-reporting")]
         public class ErrorReportingController : ControllerBase
@@ -128,6 +133,9 @@ namespace Warehouse_CMS.Controllers
             [HttpPost]
             public IActionResult ReportError([FromBody] ClientErrorReport errorReport)
             {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
                 if (_environment.IsDevelopment() || _environment.IsEnvironment("Testing"))
                 {
                     _logger.LogInformation(

@@ -197,7 +197,7 @@ else
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
-    app.UseStatusCodePagesWithReExecute("/Home/StatusCode", "?statusCode={0}");
+    app.UseStatusCodePagesWithReExecute("/Environment/StatusCode", "?statusCode={0}");
 }
 
 app.UseHttpsRedirection();

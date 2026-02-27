@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Warehouse_CMS.Data;
 using Warehouse_CMS.Models;
 using Warehouse_CMS.Repositories;
 
@@ -15,6 +16,8 @@ namespace Warehouse_CMS.Controllers
         private readonly IOrderStatusRepository _orderStatusRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IEmployeeIdentityRepository _employeeIdentityRepository;
+        private readonly IInventoryService _inventoryService;
+        private readonly ApplicationDbContext _dbContext;
         private readonly UserManager<IdentityUser> _userManager;
 
         public OrderController(
@@ -24,6 +27,8 @@ namespace Warehouse_CMS.Controllers
             IOrderStatusRepository orderStatusRepository,
             IEmployeeRepository employeeRepository,
             IEmployeeIdentityRepository employeeIdentityRepository,
+            IInventoryService inventoryService,
+            ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager
         )
         {
@@ -33,6 +38,8 @@ namespace Warehouse_CMS.Controllers
             _orderStatusRepository = orderStatusRepository;
             _employeeRepository = employeeRepository;
             _employeeIdentityRepository = employeeIdentityRepository;
+            _inventoryService = inventoryService;
+            _dbContext = dbContext;
             _userManager = userManager;
         }
 
@@ -199,36 +206,41 @@ namespace Warehouse_CMS.Controllers
                 return View(order);
             }
 
-            decimal totalAmount = 0;
-            foreach (var item in order.OrderItems)
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            try
             {
-                var product = _productRepository.GetById(item.ProductId);
-                if (product == null)
+                decimal totalAmount = 0;
+                foreach (var item in order.OrderItems)
                 {
-                    ModelState.AddModelError("", $"Product with ID {item.ProductId} not found");
-                    ViewBag.Products = _productRepository.GetAll();
-                    ViewBag.Customers = _customerRepository.GetAll();
-                    return View(order);
+                    var stockError = _inventoryService.DeductStockForOrderItem(item);
+                    if (stockError != null)
+                    {
+                        await transaction.RollbackAsync();
+                        ModelState.AddModelError("", stockError);
+                        ViewBag.Products = _productRepository.GetAll();
+                        ViewBag.Customers = _customerRepository.GetAll();
+                        return View(order);
+                    }
+
+                    totalAmount += item.Quantity * item.UnitPrice;
                 }
 
-                if (product.StockQuantity < item.Quantity)
-                {
-                    ModelState.AddModelError("", $"Insufficient stock for product: {product.Name}");
-                    ViewBag.Products = _productRepository.GetAll();
-                    ViewBag.Customers = _customerRepository.GetAll();
-                    return View(order);
-                }
+                order.TotalAmount = totalAmount;
+                _orderRepository.Add(order);
 
-                product.StockQuantity -= item.Quantity;
-                _productRepository.Update(product);
-
-                item.UnitPrice = product.Price;
-                totalAmount += item.Quantity * item.UnitPrice;
+                await transaction.CommitAsync();
             }
-
-            order.TotalAmount = totalAmount;
-
-            _orderRepository.Add(order);
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                ModelState.AddModelError(
+                    "",
+                    "An error occurred while creating the order. Please try again."
+                );
+                ViewBag.Products = _productRepository.GetAll();
+                ViewBag.Customers = _customerRepository.GetAll();
+                return View(order);
+            }
 
             return RedirectToAction(nameof(Index));
         }

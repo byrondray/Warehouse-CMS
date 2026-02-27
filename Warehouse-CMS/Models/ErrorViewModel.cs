@@ -26,10 +26,23 @@ public class ClientJsConfig
 
 public class ClientErrorReport
 {
-    public string Type { get; set; }
-    public string Message { get; set; }
-    public string Url { get; set; }
-    public string Timestamp { get; set; }
-    public string Source { get; set; }
-    public string UserId { get; set; }
+    [System.ComponentModel.DataAnnotations.Required]
+    [System.ComponentModel.DataAnnotations.StringLength(100)]
+    public string Type { get; set; } = string.Empty;
+
+    [System.ComponentModel.DataAnnotations.Required]
+    [System.ComponentModel.DataAnnotations.StringLength(2000)]
+    public string Message { get; set; } = string.Empty;
+
+    [System.ComponentModel.DataAnnotations.StringLength(500)]
+    public string Url { get; set; } = string.Empty;
+
+    [System.ComponentModel.DataAnnotations.StringLength(100)]
+    public string Timestamp { get; set; } = string.Empty;
+
+    [System.ComponentModel.DataAnnotations.StringLength(500)]
+    public string Source { get; set; } = string.Empty;
+
+    [System.ComponentModel.DataAnnotations.StringLength(100)]
+    public string UserId { get; set; } = string.Empty;
 }
