@@ -24,7 +24,7 @@
                                 <h3 class="mb-0">Sign In</h3>
                             </div>
                             
-                            <form id="account" method="post">
+                            <form id="account" method="post" asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">
                                 @if (!ViewData.ModelState.IsValid)
                                 {
                                     <div class="alert alert-danger d-flex align-items-center" role="alert">
@@ -44,7 +44,6 @@
                                         </div>
                                     </div>
                                 }
-                                <div asp-validation-summary="ModelOnly" class="alert alert-danger validation-summary-errors-custom" role="alert"></div>
                                 
                                 <div class="form-floating mb-3">
                                     <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true"
@@ -183,14 +182,6 @@
     .btn-outline-primary:hover {
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(27, 110, 194, 0.15);
-    }
-    
-    /* Show validation summary only when it has content */
-    .validation-summary-errors-custom.validation-summary-valid {
-        display: none;
-    }
-    .validation-summary-errors-custom.validation-summary-errors {
-        display: block;
     }
 </style>
 
