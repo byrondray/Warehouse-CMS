@@ -47,7 +47,7 @@ namespace Warehouse_CMS.Repositories
             return _categories;
         }
 
-        public Category GetById(int id)
+        public Category? GetById(int id)
         {
             var category = _categories.FirstOrDefault(c => c.Id == id);
             System.Diagnostics.Debug.WriteLine(

@@ -46,7 +46,7 @@ namespace Warehouse_CMS.Repositories
             return _customers;
         }
 
-        public Customer GetById(int id)
+        public Customer? GetById(int id)
         {
             var customer = _customers.FirstOrDefault(c => c.Id == id);
             System.Diagnostics.Debug.WriteLine(

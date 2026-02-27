@@ -99,7 +99,7 @@ namespace Warehouse_CMS.Controllers
             var viewModel = new EditRoleViewModel
             {
                 RoleId = identityRole.Id,
-                RoleName = identityRole.Name,
+                RoleName = identityRole.Name ?? string.Empty,
                 Description = employeeRole?.Description ?? "",
             };
 
@@ -170,7 +170,7 @@ namespace Warehouse_CMS.Controllers
             var viewModel = new DeleteRoleViewModel
             {
                 RoleId = identityRole.Id,
-                RoleName = identityRole.Name,
+                RoleName = identityRole.Name ?? string.Empty,
                 Description = employeeRole?.Description ?? "",
             };
 
@@ -220,19 +220,19 @@ namespace Warehouse_CMS.Controllers
                 return NotFound();
             }
 
-            var usersInRole = await _roleRepository.GetUsersInRoleAsync(role.Name);
+            var usersInRole = await _roleRepository.GetUsersInRoleAsync(role.Name ?? string.Empty);
             var allUsers = _userManager.Users.ToList();
 
             var viewModel = new ManageUsersInRoleViewModel
             {
                 RoleId = role.Id,
-                RoleName = role.Name,
+                RoleName = role.Name ?? string.Empty,
                 Users = allUsers
                     .Select(u => new UserRoleViewModel
                     {
                         UserId = u.Id,
-                        UserName = u.UserName,
-                        Email = u.Email,
+                        UserName = u.UserName ?? string.Empty,
+                        Email = u.Email ?? string.Empty,
                         IsSelected = usersInRole.Any(ur => ur.Id == u.Id),
                     })
                     .ToList(),
@@ -252,13 +252,13 @@ namespace Warehouse_CMS.Controllers
                 return NotFound();
             }
 
-            var roleName = role.Name;
+            var roleName = role.Name ?? string.Empty;
             var usersInRole = await _roleRepository.GetUsersInRoleAsync(roleName);
 
             var allRoles = await _roleRepository.GetAllIdentityRolesAsync();
             var otherRoleNames = allRoles
                 .Where(r => r.Name != roleName)
-                .Select(r => r.Name)
+                .Select(r => r.Name ?? string.Empty)
                 .ToList();
 
             foreach (var user in model.Users)

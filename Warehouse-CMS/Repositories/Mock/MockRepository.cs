@@ -76,7 +76,7 @@ namespace Warehouse_CMS.Repositories
             return _products;
         }
 
-        public Product GetById(int id)
+        public Product? GetById(int id)
         {
             var product = _products.FirstOrDefault(p => p.Id == id);
             System.Diagnostics.Debug.WriteLine(

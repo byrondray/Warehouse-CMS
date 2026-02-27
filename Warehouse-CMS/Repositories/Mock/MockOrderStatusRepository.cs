@@ -50,7 +50,7 @@ namespace Warehouse_CMS.Repositories
             return _orderStatuses;
         }
 
-        public OrderStatus GetById(int id)
+        public OrderStatus? GetById(int id)
         {
             var status = _orderStatuses.FirstOrDefault(s => s.Id == id);
             System.Diagnostics.Debug.WriteLine(

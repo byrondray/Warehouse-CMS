@@ -42,7 +42,7 @@ namespace Warehouse_CMS.Repositories
             return _suppliers;
         }
 
-        public Supplier GetById(int id)
+        public Supplier? GetById(int id)
         {
             var supplier = _suppliers.FirstOrDefault(s => s.Id == id);
             System.Diagnostics.Debug.WriteLine(

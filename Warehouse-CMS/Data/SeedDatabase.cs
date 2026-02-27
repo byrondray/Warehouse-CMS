@@ -120,7 +120,7 @@ public static class SeedDatabase
         }
 
         await SeedIdentityRoles(dbContext, roleManager);
-        await SeedAdminUser(userManager, roleManager);
+        await SeedAdminUser(dbContext, userManager, roleManager);
     }
 
     private static void EnsureEmployeeRolesExist(ApplicationDbContext context)
@@ -163,6 +163,7 @@ public static class SeedDatabase
     }
 
     private static async Task SeedAdminUser(
+        ApplicationDbContext dbContext,
         UserManager<IdentityUser> userManager,
         RoleManager<IdentityRole> roleManager
     )
@@ -191,6 +192,25 @@ public static class SeedDatabase
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(user, "Admin");
+                adminUser = user;
+            }
+        }
+
+        if (adminUser != null && !dbContext.Employees.Any(e => e.UserId == adminUser.Id))
+        {
+            var adminRole = dbContext.EmployeeRoles.FirstOrDefault(r => r.Role == "Admin");
+            if (adminRole != null)
+            {
+                dbContext.Employees.Add(
+                    new Employee
+                    {
+                        Name = "Admin",
+                        StartDate = DateTime.UtcNow,
+                        EmployeeRoleId = adminRole.Id,
+                        UserId = adminUser.Id,
+                    }
+                );
+                dbContext.SaveChanges();
             }
         }
     }

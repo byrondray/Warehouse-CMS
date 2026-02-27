@@ -60,7 +60,7 @@ namespace Warehouse_CMS.Repositories
             return _orderItems;
         }
 
-        public OrderItem GetById(int id)
+        public OrderItem? GetById(int id)
         {
             var orderItem = _orderItems.FirstOrDefault(o => o.Id == id);
             System.Diagnostics.Debug.WriteLine(

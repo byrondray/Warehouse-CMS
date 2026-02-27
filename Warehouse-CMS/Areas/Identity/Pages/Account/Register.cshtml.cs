@@ -52,20 +52,22 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
         }
 
         [BindProperty]
-        public InputModel Input { get; set; }
+        public InputModel Input { get; set; } = new();
 
-        public string ReturnUrl { get; set; }
+        public string ReturnUrl { get; set; } = string.Empty;
 
-        public IList<AuthenticationScheme> ExternalLogins { get; set; }
+        public IList<AuthenticationScheme> ExternalLogins { get; set; } =
+            new List<AuthenticationScheme>();
 
-        public IEnumerable<SelectListItem> AvailableRoles { get; set; }
+        public IEnumerable<SelectListItem> AvailableRoles { get; set; } =
+            Enumerable.Empty<SelectListItem>();
 
         public class InputModel
         {
             [Required]
             [EmailAddress]
             [Display(Name = "Email")]
-            public string Email { get; set; }
+            public string Email { get; set; } = string.Empty;
 
             [Required]
             [StringLength(
@@ -75,7 +77,7 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
             )]
             [DataType(DataType.Password)]
             [Display(Name = "Password")]
-            public string Password { get; set; }
+            public string Password { get; set; } = string.Empty;
 
             [DataType(DataType.Password)]
             [Display(Name = "Confirm password")]
@@ -83,11 +85,11 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                 "Password",
                 ErrorMessage = "The password and confirmation password do not match."
             )]
-            public string ConfirmPassword { get; set; }
+            public string ConfirmPassword { get; set; } = string.Empty;
 
             [Required]
             [Display(Name = "Full Name")]
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
 
             [Required]
             [Display(Name = "Start Date")]

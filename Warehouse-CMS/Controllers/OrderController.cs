@@ -77,6 +77,12 @@ namespace Warehouse_CMS.Controllers
 
             ViewBag.Products = _productRepository.GetAll();
             ViewBag.Customers = _customerRepository.GetAll();
+
+            if (IsAjaxRequest())
+            {
+                return PartialView("_CreateOrder", order);
+            }
+
             return View(order);
         }
 
@@ -137,7 +143,7 @@ namespace Warehouse_CMS.Controllers
                 Employee = employee,
             };
 
-            Customer customer = null;
+            Customer? customer = null;
             if (CustomerId > 0)
             {
                 customer = _customerRepository.GetById(CustomerId);

@@ -70,7 +70,7 @@ namespace Warehouse_CMS.Repositories
             return _orders;
         }
 
-        public Order GetById(int id)
+        public Order? GetById(int id)
         {
             var order = _orders.FirstOrDefault(o => o.Id == id);
             System.Diagnostics.Debug.WriteLine(
@@ -275,7 +275,7 @@ namespace Warehouse_CMS.Repositories
 
         // Helper methods to handle data from HTML forms in case your controller is still
         // expecting CustomerName and Status as form fields
-        private string GetCustomerNameFromRequest()
+        private string? GetCustomerNameFromRequest()
         {
             // In a real implementation, you might access these from
             // HttpContext.Current.Request.Form["CustomerName"]
@@ -283,7 +283,7 @@ namespace Warehouse_CMS.Repositories
             return null;
         }
 
-        private string GetStatusFromRequest()
+        private string? GetStatusFromRequest()
         {
             // In a real implementation, you might access these from
             // HttpContext.Current.Request.Form["Status"]

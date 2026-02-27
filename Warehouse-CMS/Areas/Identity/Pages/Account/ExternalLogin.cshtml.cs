@@ -50,26 +50,27 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
         }
 
         [BindProperty]
-        public InputModel Input { get; set; }
+        public InputModel Input { get; set; } = new();
 
-        public string ProviderDisplayName { get; set; }
+        public string ProviderDisplayName { get; set; } = string.Empty;
 
-        public string ReturnUrl { get; set; }
+        public string ReturnUrl { get; set; } = string.Empty;
 
         [TempData]
-        public string ErrorMessage { get; set; }
+        public string ErrorMessage { get; set; } = string.Empty;
 
-        public IEnumerable<SelectListItem> AvailableRoles { get; set; }
+        public IEnumerable<SelectListItem> AvailableRoles { get; set; } =
+            Enumerable.Empty<SelectListItem>();
 
         public class InputModel
         {
             [Required]
             [EmailAddress]
-            public string Email { get; set; }
+            public string Email { get; set; } = string.Empty;
 
             [Required]
             [Display(Name = "Full Name")]
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
 
             [Required]
             [Display(Name = "Start Date")]
