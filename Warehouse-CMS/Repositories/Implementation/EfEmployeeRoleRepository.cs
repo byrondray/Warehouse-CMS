@@ -22,29 +22,29 @@ namespace Warehouse_CMS.Repositories.Implementation
             return _dbSet.Include(r => r.Employees).FirstOrDefault(r => r.Id == id);
         }
 
-        public async Task<IEnumerable<EmployeeRole>> GetAllAsync()
+        public override async Task<IEnumerable<EmployeeRole>> GetAllAsync()
         {
             return await _dbSet.Include(r => r.Employees).ToListAsync();
         }
 
-        public async Task<EmployeeRole?> GetByIdAsync(int id)
+        public override async Task<EmployeeRole?> GetByIdAsync(int id)
         {
             return await _dbSet.Include(r => r.Employees).FirstOrDefaultAsync(r => r.Id == id);
         }
 
-        public async Task AddAsync(EmployeeRole entity)
+        public override async Task AddAsync(EmployeeRole entity)
         {
             await _dbSet.AddAsync(entity);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(EmployeeRole entity)
+        public override async Task UpdateAsync(EmployeeRole entity)
         {
             _dbSet.Update(entity);
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(int id)
+        public override async Task DeleteAsync(int id)
         {
             var entity = await _dbSet.FindAsync(id);
             if (entity != null)

@@ -25,12 +25,12 @@ namespace Warehouse_CMS.Repositories.Implementation
                 .FirstOrDefault(e => e.Id == id);
         }
 
-        public async Task<IEnumerable<Employee>> GetAllAsync()
+        public override async Task<IEnumerable<Employee>> GetAllAsync()
         {
             return await _dbSet.Include(e => e.EmployeeRole).Include(e => e.Orders).ToListAsync();
         }
 
-        public async Task<Employee?> GetByIdAsync(int id)
+        public override async Task<Employee?> GetByIdAsync(int id)
         {
             return await _dbSet
                 .Include(e => e.EmployeeRole)
@@ -38,19 +38,19 @@ namespace Warehouse_CMS.Repositories.Implementation
                 .FirstOrDefaultAsync(e => e.Id == id);
         }
 
-        public async Task AddAsync(Employee employee)
+        public override async Task AddAsync(Employee employee)
         {
             await _dbSet.AddAsync(employee);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(Employee employee)
+        public override async Task UpdateAsync(Employee employee)
         {
             _dbSet.Update(employee);
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(int id)
+        public override async Task DeleteAsync(int id)
         {
             var employee = await _dbSet.FindAsync(id);
             if (employee != null)

@@ -50,9 +50,9 @@ namespace Warehouse_CMS.Services
             }
         }
 
-        public async Task<IList<IdentityRole>> GetAllIdentityRolesAsync()
+        public Task<IList<IdentityRole>> GetAllIdentityRolesAsync()
         {
-            return _roleManager.Roles.ToList();
+            return Task.FromResult<IList<IdentityRole>>(_roleManager.Roles.ToList());
         }
 
         public async Task<IdentityRole?> GetIdentityRoleByIdAsync(string roleId)

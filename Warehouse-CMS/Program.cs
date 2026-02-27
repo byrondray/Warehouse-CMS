@@ -1,10 +1,7 @@
-using System;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.SqlServer;
 using Warehouse_CMS.Data;
 using Warehouse_CMS.Models;
 using Warehouse_CMS.Repositories;
