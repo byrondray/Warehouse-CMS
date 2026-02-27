@@ -101,9 +101,9 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
             public int EmployeeRoleId { get; set; }
         }
 
-        public async Task OnGetAsync(string returnUrl = null)
+        public async Task OnGetAsync(string? returnUrl = null)
         {
-            ReturnUrl = returnUrl;
+            ReturnUrl = returnUrl ?? string.Empty;
             ExternalLogins = (
                 await _signInManager.GetExternalAuthenticationSchemesAsync()
             ).ToList();
@@ -113,7 +113,7 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                 .Select(r => new SelectListItem { Value = r.Id.ToString(), Text = r.Role });
         }
 
-        public async Task<IActionResult> OnPostAsync(string returnUrl = null)
+        public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
         {
             returnUrl ??= Url.Content("~/");
             ExternalLogins = (
@@ -171,7 +171,7 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                     await _emailSender.SendEmailAsync(
                         Input.Email,
                         "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>."
+                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl ?? string.Empty)}'>clicking here</a>."
                     );
 
                     if (_userManager.Options.SignIn.RequireConfirmedAccount)
