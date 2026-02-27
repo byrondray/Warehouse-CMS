@@ -17,7 +17,7 @@ namespace Warehouse_CMS.Repositories.Implementation
             return _dbSet.Include(r => r.Employees).ToList();
         }
 
-        public override EmployeeRole GetById(int id)
+        public override EmployeeRole? GetById(int id)
         {
             return _dbSet.Include(r => r.Employees).FirstOrDefault(r => r.Id == id);
         }
@@ -27,7 +27,7 @@ namespace Warehouse_CMS.Repositories.Implementation
             return await _dbSet.Include(r => r.Employees).ToListAsync();
         }
 
-        public async Task<EmployeeRole> GetByIdAsync(int id)
+        public async Task<EmployeeRole?> GetByIdAsync(int id)
         {
             return await _dbSet.Include(r => r.Employees).FirstOrDefaultAsync(r => r.Id == id);
         }

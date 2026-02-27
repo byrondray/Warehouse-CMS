@@ -20,7 +20,7 @@ namespace Warehouse_CMS.Repositories.Implementation
                 .ToList();
         }
 
-        public override Product GetById(int id)
+        public override Product? GetById(int id)
         {
             return _dbSet
                 .Include(p => p.Category)

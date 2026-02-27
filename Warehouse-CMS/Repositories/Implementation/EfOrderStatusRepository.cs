@@ -16,7 +16,7 @@ namespace Warehouse_CMS.Repositories.Implementation
             return _dbSet.Include(s => s.Orders).ToList();
         }
 
-        public override OrderStatus GetById(int id)
+        public override OrderStatus? GetById(int id)
         {
             return _dbSet.Include(s => s.Orders).FirstOrDefault(s => s.Id == id);
         }

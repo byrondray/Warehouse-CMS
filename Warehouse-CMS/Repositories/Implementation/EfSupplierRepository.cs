@@ -16,7 +16,7 @@ namespace Warehouse_CMS.Repositories.Implementation
             return _dbSet.Include(s => s.Products).ToList();
         }
 
-        public override Supplier GetById(int id)
+        public override Supplier? GetById(int id)
         {
             return _dbSet.Include(s => s.Products).FirstOrDefault(s => s.Id == id);
         }

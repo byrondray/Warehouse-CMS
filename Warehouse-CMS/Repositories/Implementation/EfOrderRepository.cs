@@ -22,7 +22,7 @@ namespace Warehouse_CMS.Repositories.Implementation
                 .ToList();
         }
 
-        public override Order GetById(int id)
+        public override Order? GetById(int id)
         {
             return _dbSet
                 .Include(o => o.Customer)
