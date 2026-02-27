@@ -5,6 +5,7 @@ using Warehouse_CMS.Models;
 
 namespace Warehouse_CMS.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class EnvironmentController : Controller
     {
         private readonly IWebHostEnvironment _environment;

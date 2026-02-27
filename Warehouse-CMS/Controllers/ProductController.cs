@@ -102,6 +102,7 @@ namespace Warehouse_CMS.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Manager")]
         public IActionResult Create(ProductViewModel viewModel)
         {
@@ -191,6 +192,7 @@ namespace Warehouse_CMS.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Manager")]
         public IActionResult Edit(int id, ProductViewModel viewModel)
         {
@@ -274,6 +276,7 @@ namespace Warehouse_CMS.Controllers
         }
 
         [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Manager")]
         public IActionResult DeleteConfirmed(int id)
         {

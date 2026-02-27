@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.SqlServer;
 using Warehouse_CMS.Data;
@@ -33,7 +32,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     {
         var connectionString =
             builder.Configuration.GetConnectionString("DefaultConnection")
-            ?? "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=WarehouseCMS;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False";
+            ?? throw new InvalidOperationException(
+                "Connection string 'DefaultConnection' not found. Configure it in appsettings.Development.json."
+            );
 
         options.UseSqlServer(connectionString).EnableSensitiveDataLogging();
     }
@@ -165,24 +166,19 @@ builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
-if (!app.Environment.IsDevelopment())
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        db.Database.Migrate();
-    }
-}
-
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
-        dbContext.Database.EnsureCreated();
 
-        SeedDatabase.Seed(services);
+        if (!app.Environment.IsDevelopment())
+        {
+            dbContext.Database.Migrate();
+        }
+
+        await SeedDatabase.SeedAsync(services);
     }
     catch (Exception ex)
     {
@@ -196,12 +192,6 @@ if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
     app.UseDeveloperExceptionPage();
     app.UseMigrationsEndPoint();
     app.UseStatusCodePages();
-}
-else if (app.Environment.IsStaging())
-{
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
-    app.UseStatusCodePagesWithReExecute("/Home/StatusCode", "?statusCode={0}");
 }
 else
 {

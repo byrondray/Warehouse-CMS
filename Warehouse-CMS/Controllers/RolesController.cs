@@ -6,6 +6,7 @@ using Warehouse_CMS.Repositories;
 
 namespace Warehouse_CMS.Controllers
 {
+    [Authorize(Roles = "Admin,Manager")]
     public class RolesController : Controller
     {
         private readonly IRoleManagementRepository _roleRepository;

@@ -4,7 +4,7 @@ using Warehouse_CMS.Models;
 
 public static class SeedDatabase
 {
-    public static void Seed(IServiceProvider serviceProvider)
+    public static async Task SeedAsync(IServiceProvider serviceProvider)
     {
         using var scope = serviceProvider.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -30,7 +30,6 @@ public static class SeedDatabase
                 },
             };
             dbContext.Categories.AddRange(categories);
-            dbContext.SaveChanges();
 
             var orderStatuses = new List<OrderStatus>
             {
@@ -40,7 +39,6 @@ public static class SeedDatabase
                 new OrderStatus { Status = "Cancelled" },
             };
             dbContext.OrderStatuses.AddRange(orderStatuses);
-            dbContext.SaveChanges();
 
             var suppliers = new List<Supplier>
             {
@@ -60,7 +58,6 @@ public static class SeedDatabase
                 },
             };
             dbContext.Suppliers.AddRange(suppliers);
-            dbContext.SaveChanges();
 
             var customers = new List<Customer>
             {
@@ -69,7 +66,6 @@ public static class SeedDatabase
                 new Customer { Name = "Bob Johnson", CreatedAt = DateTime.UtcNow.AddDays(-5) },
             };
             dbContext.Customers.AddRange(customers);
-            dbContext.SaveChanges();
 
             var employees = new List<Employee>
             {
@@ -87,7 +83,6 @@ public static class SeedDatabase
                 },
             };
             dbContext.Employees.AddRange(employees);
-            dbContext.SaveChanges();
 
             var products = new List<Product>
             {
@@ -120,11 +115,12 @@ public static class SeedDatabase
                 },
             };
             dbContext.Products.AddRange(products);
+
             dbContext.SaveChanges();
         }
 
-        SeedIdentityRoles(dbContext, roleManager).Wait();
-        SeedAdminUser(userManager, roleManager).Wait();
+        await SeedIdentityRoles(dbContext, roleManager);
+        await SeedAdminUser(userManager, roleManager);
     }
 
     private static void EnsureEmployeeRolesExist(ApplicationDbContext context)
@@ -176,7 +172,7 @@ public static class SeedDatabase
             await roleManager.CreateAsync(new IdentityRole("Admin"));
         }
 
-        var adminEmail = "admin@warehouse.com";
+        var adminEmail = Environment.GetEnvironmentVariable("ADMIN_EMAIL") ?? "admin@warehouse.com";
         var adminUser = await userManager.FindByEmailAsync(adminEmail);
 
         if (adminUser == null)
@@ -188,7 +184,7 @@ public static class SeedDatabase
                 EmailConfirmed = true,
             };
 
-            var password = "Admin@123456";
+            var password = Environment.GetEnvironmentVariable("ADMIN_PASSWORD") ?? "Admin@123456";
 
             var result = await userManager.CreateAsync(user, password);
 

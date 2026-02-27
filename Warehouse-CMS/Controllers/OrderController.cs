@@ -74,6 +74,7 @@ namespace Warehouse_CMS.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Manager,Sales Associate")]
         public async Task<IActionResult> Create(
             int CustomerId,
@@ -266,6 +267,7 @@ namespace Warehouse_CMS.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Manager,Sales Associate")]
         public IActionResult Edit(Order order)
         {
