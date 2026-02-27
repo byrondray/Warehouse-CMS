@@ -24,7 +24,7 @@ namespace Warehouse_CMS.ViewModels
         [Required(ErrorMessage = "Please select a category")]
         public int CategoryId { get; set; }
 
-        public string CategoryName { get; set; } = string.Empty;
+        public string? CategoryName { get; set; } = string.Empty;
 
         public SelectList CategoryList { get; set; } =
             new SelectList(Enumerable.Empty<SelectListItem>());
@@ -32,7 +32,7 @@ namespace Warehouse_CMS.ViewModels
         [Required(ErrorMessage = "Please select a supplier")]
         public int SupplierId { get; set; }
 
-        public string SupplierName { get; set; } = string.Empty;
+        public string? SupplierName { get; set; } = string.Empty;
 
         public SelectList SupplierList { get; set; } =
             new SelectList(Enumerable.Empty<SelectListItem>());
