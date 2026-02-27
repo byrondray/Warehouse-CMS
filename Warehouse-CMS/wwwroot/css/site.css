@@ -8,8 +8,14 @@ html {
   }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
+  box-shadow:
+    0 0 0 0.1rem white,
+    0 0 0 0.25rem #258cfb;
 }
 
 html {
@@ -19,4 +25,24 @@ html {
 
 body {
   margin-bottom: 60px;
+}
+
+/* Login page styles */
+.login-card {
+  border: none;
+  transition: transform 0.2s;
+}
+
+.login-card:hover {
+  transform: translateY(-2px);
+}
+
+.login-form .form-control:focus {
+  border-color: #1b6ec2;
+  box-shadow: 0 0 0 0.2rem rgba(27, 110, 194, 0.25);
+}
+
+.login-form .btn-outline-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(27, 110, 194, 0.15);
 }

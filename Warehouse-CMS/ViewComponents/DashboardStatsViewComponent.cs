@@ -8,6 +8,7 @@ namespace Warehouse_CMS.ViewComponents
     public class DashboardStatsViewComponent : ViewComponent
     {
         private readonly ApplicationDbContext _context;
+        private const int LowStockThreshold = 5;
 
         public DashboardStatsViewComponent(ApplicationDbContext context)
         {
@@ -16,11 +17,20 @@ namespace Warehouse_CMS.ViewComponents
 
         public async Task<IViewComponentResult> InvokeAsync()
         {
+            var cancelledStatusIds = await _context
+                .OrderStatuses.Where(s => s.Status == "Completed" || s.Status == "Cancelled")
+                .Select(s => s.Id)
+                .ToListAsync();
+
             var viewModel = new DashboardStatsViewModel
             {
                 TotalProducts = await _context.Products.CountAsync(),
-                LowStockCount = await _context.Products.CountAsync(p => p.StockQuantity < 10),
-                ActiveOrders = await _context.Orders.CountAsync(o => o.OrderStatusId != 4),
+                LowStockCount = await _context.Products.CountAsync(p =>
+                    p.StockQuantity < LowStockThreshold
+                ),
+                ActiveOrders = await _context.Orders.CountAsync(o =>
+                    !cancelledStatusIds.Contains(o.OrderStatusId)
+                ),
                 SupplierCount = await _context.Suppliers.CountAsync(),
             };
 

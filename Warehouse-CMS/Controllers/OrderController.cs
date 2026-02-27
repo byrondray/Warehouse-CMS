@@ -7,7 +7,7 @@ using Warehouse_CMS.Repositories;
 namespace Warehouse_CMS.Controllers
 {
     [Authorize]
-    public class OrderController : Controller
+    public class OrderController : BaseController
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IProductRepository _productRepository;
@@ -40,7 +40,7 @@ namespace Warehouse_CMS.Controllers
         {
             var orders = _orderRepository.GetAll().ToList();
 
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            if (IsAjaxRequest())
             {
                 return PartialView("_OrdersList", orders);
             }
@@ -62,7 +62,7 @@ namespace Warehouse_CMS.Controllers
 
             var order = new Order
             {
-                OrderDate = DateTime.Now,
+                OrderDate = DateTime.UtcNow,
                 OrderStatusId = pendingStatus.Id,
                 OrderStatus = pendingStatus,
                 OrderItems = new List<OrderItem> { new OrderItem { Quantity = 1 } },
@@ -105,7 +105,7 @@ namespace Warehouse_CMS.Controllers
                 return View(
                     new Order
                     {
-                        OrderDate = DateTime.Now,
+                        OrderDate = DateTime.UtcNow,
                         OrderItems = new List<OrderItem> { new OrderItem { Quantity = 1 } },
                     }
                 );
@@ -122,7 +122,7 @@ namespace Warehouse_CMS.Controllers
 
             var order = new Order
             {
-                OrderDate = DateTime.Now,
+                OrderDate = DateTime.UtcNow,
                 OrderStatusId = pendingStatus.Id,
                 OrderStatus = pendingStatus,
                 OrderItems = new List<OrderItem>(),
@@ -137,7 +137,7 @@ namespace Warehouse_CMS.Controllers
             }
             else if (!string.IsNullOrWhiteSpace(CustomerName))
             {
-                customer = new Customer { Name = CustomerName, CreatedAt = DateTime.Now };
+                customer = new Customer { Name = CustomerName, CreatedAt = DateTime.UtcNow };
                 _customerRepository.Add(customer);
             }
 
@@ -239,14 +239,6 @@ namespace Warehouse_CMS.Controllers
             if (order == null)
             {
                 return NotFound();
-            }
-
-            if (order.OrderItems != null)
-            {
-                foreach (var item in order.OrderItems)
-                {
-                    item.Product = _productRepository.GetById(item.ProductId);
-                }
             }
 
             return View(order);

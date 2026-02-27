@@ -7,7 +7,7 @@ using Warehouse_CMS.Repositories;
 namespace Warehouse_CMS.Controllers
 {
     [Authorize(Roles = "Admin,Manager")]
-    public class RolesController : Controller
+    public class RolesController : BaseController
     {
         private readonly IRoleManagementRepository _roleRepository;
         private readonly IEmployeeRoleRepository _employeeRoleRepository;
@@ -38,7 +38,7 @@ namespace Warehouse_CMS.Controllers
                 EmployeeRoles = employeeRoles,
             };
 
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            if (IsAjaxRequest())
             {
                 return PartialView("_Index", viewModel);
             }

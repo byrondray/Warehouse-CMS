@@ -7,7 +7,7 @@ using Warehouse_CMS.Repositories;
 namespace Warehouse_CMS.Controllers
 {
     [Authorize]
-    public class HomeController : Controller
+    public class HomeController : BaseController
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IProductRepository _productRepository;
@@ -64,7 +64,7 @@ namespace Warehouse_CMS.Controllers
                 return PartialView();
             }
 
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            if (IsAjaxRequest())
             {
                 return PartialView("_Index");
             }
@@ -74,7 +74,7 @@ namespace Warehouse_CMS.Controllers
 
         public IActionResult Privacy()
         {
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            if (IsAjaxRequest())
             {
                 return PartialView("_Privacy");
             }

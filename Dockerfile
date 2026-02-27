@@ -20,7 +20,14 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 EXPOSE 8080
 
+RUN adduser --disabled-password --gecos "" appuser
+
 # Copy published files
 COPY --from=publish /app/publish .
+
+USER appuser
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
 
 ENTRYPOINT ["dotnet", "Warehouse-CMS.dll"]

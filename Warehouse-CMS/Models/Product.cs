@@ -13,9 +13,11 @@ namespace Warehouse_CMS.Models
         public string Description { get; set; } = string.Empty;
 
         [Required]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Price must be greater than 0")]
         public decimal Price { get; set; }
 
         [Required]
+        [Range(0, int.MaxValue, ErrorMessage = "Stock quantity must be a positive number")]
         public int StockQuantity { get; set; }
 
         public int CategoryId { get; set; }

@@ -6,7 +6,7 @@ namespace Warehouse_CMS
 {
     public static class CheckData
     {
-        public static void Main(string[] args)
+        public static void Run()
         {
             var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
             if (string.IsNullOrEmpty(connectionString))

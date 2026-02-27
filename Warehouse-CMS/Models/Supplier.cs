@@ -13,9 +13,11 @@ namespace Warehouse_CMS.Models
         public string ContactPerson { get; set; } = string.Empty;
 
         [Required]
+        [EmailAddress]
         public string Email { get; set; } = string.Empty;
 
         [Required]
+        [Phone]
         public string Phone { get; set; } = string.Empty;
 
         public List<Product> Products { get; set; } = new List<Product>();

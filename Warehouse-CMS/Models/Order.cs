@@ -6,10 +6,13 @@ namespace Warehouse_CMS.Models
     {
         public int Id { get; set; }
 
-        public DateTime OrderDate { get; set; } = DateTime.Now;
+        [Required]
+        public DateTime OrderDate { get; set; } = DateTime.UtcNow;
 
+        [Range(0, double.MaxValue)]
         public decimal TotalAmount { get; set; }
 
+        [Required]
         public int OrderStatusId { get; set; }
         public OrderStatus? OrderStatus { get; set; }
 

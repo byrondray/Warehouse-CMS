@@ -8,7 +8,7 @@ using Warehouse_CMS.ViewModels;
 namespace Warehouse_CMS.Controllers
 {
     [Authorize]
-    public class ProductController : Controller
+    public class ProductController : BaseController
     {
         private readonly IProductRepository _repository;
         private readonly ICategoryRepository _categoryRepository;
@@ -42,7 +42,7 @@ namespace Warehouse_CMS.Controllers
                     SupplierName = p.Supplier?.Name,
                 });
 
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            if (IsAjaxRequest())
             {
                 return PartialView("_ProductsList", products);
             }
@@ -75,7 +75,7 @@ namespace Warehouse_CMS.Controllers
                 SupplierName = product.Supplier?.Name,
             };
 
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            if (IsAjaxRequest())
             {
                 return PartialView("_ProductDetails", viewModel);
             }
@@ -92,13 +92,7 @@ namespace Warehouse_CMS.Controllers
                 SupplierList = new SelectList(_supplierRepository.GetAll(), "Id", "Name"),
             };
 
-            // Check if this is an AJAX request for the pseudo-SPA
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
-                return PartialView("_CreateProduct", viewModel);
-            }
-
-            return View(viewModel);
+            return ViewOrPartial("_CreateProduct", viewModel);
         }
 
         [HttpPost]
@@ -120,12 +114,7 @@ namespace Warehouse_CMS.Controllers
 
                 _repository.Add(product);
 
-                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                {
-                    return Json(new { success = true, redirectUrl = Url.Action("Index") });
-                }
-
-                return RedirectToAction(nameof(Index));
+                return JsonOrRedirect(nameof(Index));
             }
 
             viewModel.CategoryList = new SelectList(
@@ -141,12 +130,7 @@ namespace Warehouse_CMS.Controllers
                 viewModel.SupplierId
             );
 
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
-                return PartialView("_CreateProduct", viewModel);
-            }
-
-            return View(viewModel);
+            return ViewOrPartial("_CreateProduct", viewModel);
         }
 
         [Authorize(Roles = "Admin,Manager")]
@@ -183,12 +167,7 @@ namespace Warehouse_CMS.Controllers
                 ),
             };
 
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
-                return PartialView("_EditProduct", viewModel);
-            }
-
-            return View(viewModel);
+            return ViewOrPartial("_EditProduct", viewModel);
         }
 
         [HttpPost]
@@ -216,12 +195,7 @@ namespace Warehouse_CMS.Controllers
 
                 _repository.Update(product);
 
-                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                {
-                    return Json(new { success = true, redirectUrl = Url.Action("Index") });
-                }
-
-                return RedirectToAction(nameof(Index));
+                return JsonOrRedirect(nameof(Index));
             }
 
             viewModel.CategoryList = new SelectList(
@@ -237,12 +211,7 @@ namespace Warehouse_CMS.Controllers
                 viewModel.SupplierId
             );
 
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
-                return PartialView("_EditProduct", viewModel);
-            }
-
-            return View(viewModel);
+            return ViewOrPartial("_EditProduct", viewModel);
         }
 
         [Authorize(Roles = "Admin,Manager")]
@@ -267,12 +236,7 @@ namespace Warehouse_CMS.Controllers
                 SupplierName = product.Supplier?.Name,
             };
 
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
-                return PartialView("_DeleteProduct", viewModel);
-            }
-
-            return View(viewModel);
+            return ViewOrPartial("_DeleteProduct", viewModel);
         }
 
         [HttpPost, ActionName("Delete")]
@@ -282,12 +246,7 @@ namespace Warehouse_CMS.Controllers
         {
             _repository.Delete(id);
 
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
-                return Json(new { success = true, redirectUrl = Url.Action("Index") });
-            }
-
-            return RedirectToAction(nameof(Index));
+            return JsonOrRedirect(nameof(Index));
         }
     }
 }
