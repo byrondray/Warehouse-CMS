@@ -25,7 +25,19 @@
                             </div>
                             
                             <form id="account" method="post">
-                                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" style="display: none;"></div>
+                                @if (!ViewData.ModelState.IsValid)
+                                {
+                                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                        <div>
+                                            @foreach (var error in ViewData.ModelState[string.Empty]?.Errors ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.ModelBinding.ModelError>())
+                                            {
+                                                <span>@error.ErrorMessage</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                                <div asp-validation-summary="ModelOnly" class="alert alert-danger validation-summary-errors-custom" role="alert"></div>
                                 
                                 <div class="form-floating mb-3">
                                     <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true"
@@ -167,18 +179,27 @@
     }
     
     /* Show validation summary only when it has content */
-    .validation-summary-errors {
-        display: block !important;
+    .validation-summary-errors-custom.validation-summary-valid {
+        display: none;
+    }
+    .validation-summary-errors-custom.validation-summary-errors {
+        display: block;
     }
 </style>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        // Enhance form validation display
         $(document).ready(function() {
+            var $btn = $('#login-submit');
+            var originalBtnHtml = $btn.html();
+
+            // Re-enable button if page reloaded with errors
+            if ($('.alert-danger:visible').length > 0 || $('.validation-summary-errors').length > 0) {
+                $btn.html(originalBtnHtml).prop('disabled', false);
+            }
+
             $('#account').on('submit', function() {
-                var $btn = $('#login-submit');
                 if ($(this).valid()) {
                     $btn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Signing in...').prop('disabled', true);
                 }
