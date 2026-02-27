@@ -16,7 +16,7 @@
 
             <div class="row g-4">
                 <!-- Local Login Card -->
-                <div class="col-md-6">
+                <div class="@((Model.ExternalLogins?.Count ?? 0) > 0 ? "col-md-6" : "col-md-8 mx-auto")">
                     <div class="card shadow-sm h-100">
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center mb-4">
@@ -73,72 +73,58 @@
                     </div>
                 </div>
 
-                <!-- External Login Card -->
-                <div class="col-md-6">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center mb-4">
-                                <i class="bi bi-shield-check fs-3 text-success me-3"></i>
-                                <h3 class="mb-0">Quick Sign In</h3>
+                @if ((Model.ExternalLogins?.Count ?? 0) > 0)
+                {
+                    <!-- External Login Card -->
+                    <div class="col-md-6">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center mb-4">
+                                    <i class="bi bi-shield-check fs-3 text-success me-3"></i>
+                                    <h3 class="mb-0">Quick Sign In</h3>
+                                </div>
+                                
+                                <p class="text-muted mb-4">
+                                    Sign in quickly using your existing account from these services:
+                                </p>
+                                
+                                <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                                    <div class="d-grid gap-2">
+                                        @foreach (var provider in Model.ExternalLogins!)
+                                        {
+                                            <button type="submit" class="btn btn-outline-primary btn-lg" name="provider" value="@provider.Name"
+                                                title="Log in using your @provider.DisplayName account">
+                                                @if (provider.Name.ToLower() == "google")
+                                                {
+                                                    <i class="bi bi-google me-2"></i>
+                                                }
+                                                else if (provider.Name.ToLower() == "microsoft")
+                                                {
+                                                    <i class="bi bi-microsoft me-2"></i>
+                                                }
+                                                else if (provider.Name.ToLower() == "facebook")
+                                                {
+                                                    <i class="bi bi-facebook me-2"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-shield-check me-2"></i>
+                                                }
+                                                Continue with @provider.DisplayName
+                                            </button>
+                                        }
+                                    </div>
+                                </form>
                             </div>
                             
-                            @{
-                                if ((Model.ExternalLogins?.Count ?? 0) == 0)
-                                {
-                                    <div class="text-center py-5">
-                                        <i class="bi bi-plug fs-1 text-muted mb-3 d-block"></i>
-                                        <p class="text-muted">
-                                            No external authentication services are currently configured.
-                                        </p>
-                                        <small class="text-muted">
-                                            Contact your administrator to enable social login options.
-                                        </small>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <p class="text-muted mb-4">
-                                        Sign in quickly using your existing account from these services:
-                                    </p>
-                                    
-                                    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-                                        <div class="d-grid gap-2">
-                                            @foreach (var provider in Model.ExternalLogins)
-                                            {
-                                                <button type="submit" class="btn btn-outline-primary btn-lg" name="provider" value="@provider.Name"
-                                                    title="Log in using your @provider.DisplayName account">
-                                                    @if (provider.Name.ToLower() == "google")
-                                                    {
-                                                        <i class="bi bi-google me-2"></i>
-                                                    }
-                                                    else if (provider.Name.ToLower() == "microsoft")
-                                                    {
-                                                        <i class="bi bi-microsoft me-2"></i>
-                                                    }
-                                                    else if (provider.Name.ToLower() == "facebook")
-                                                    {
-                                                        <i class="bi bi-facebook me-2"></i>
-                                                    }
-                                                    else
-                                                    {
-                                                        <i class="bi bi-shield-check me-2"></i>
-                                                    }
-                                                    Continue with @provider.DisplayName
-                                                </button>
-                                            }
-                                        </div>
-                                    </form>
-                                }
-                            }
-                        </div>
-                        
-                        <div class="card-footer bg-light text-center py-3">
-                            <a id="resend-confirmation" asp-page="./ResendEmailConfirmation" class="text-decoration-none text-muted small">
-                                <i class="bi bi-envelope-check me-1"></i> Resend email confirmation
-                            </a>
+                            <div class="card-footer bg-light text-center py-3">
+                                <a id="resend-confirmation" asp-page="./ResendEmailConfirmation" class="text-decoration-none text-muted small">
+                                    <i class="bi bi-envelope-check me-1"></i> Resend email confirmation
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
+                }
             </div>
 
             <!-- Security Notice -->
