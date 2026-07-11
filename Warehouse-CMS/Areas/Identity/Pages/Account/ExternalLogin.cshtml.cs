@@ -210,43 +210,25 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                         info.LoginProvider
                     );
 
-                    // Check if this user already has this external login
-                    var existingLogins = await _userManager.GetLoginsAsync(existingUser);
-                    if (existingLogins.Any(l => l.LoginProvider == info.LoginProvider))
-                    {
-                        _logger.LogInformation(
-                            "User {Email} already has {Provider} login, attempting sign in",
-                            Input.Email,
-                            info.LoginProvider
-                        );
+                    // Do NOT sign the existing account in here: the external identity
+                    // (info.ProviderKey) has not been verified as belonging to this account.
+                    // Signing in based only on a form-supplied email would allow anyone who
+                    // completed any Google OAuth to take over an account by typing its email.
+                    // Account linking must be done from an authenticated session, and a genuine
+                    // provider match is already handled by ExternalLoginSignInAsync in the callback.
+                    ModelState.AddModelError(
+                        string.Empty,
+                        $"An account with the email address {Input.Email} already exists. "
+                            + "Please sign in with your existing credentials first, then you can link your Google account in your profile settings."
+                    );
 
-                        await _signInManager.SignInAsync(
-                            existingUser,
-                            isPersistent: false,
-                            info.LoginProvider
-                        );
-                        return LocalRedirect(returnUrl);
-                    }
-                    else
-                    {
-                        ModelState.AddModelError(
-                            string.Empty,
-                            $"An account with the email address {Input.Email} already exists. "
-                                + "Please sign in with your existing credentials first, then you can link your Google account in your profile settings."
-                        );
+                    AvailableRoles = _employeeRoleRepository
+                        .GetAll()
+                        .Select(r => new SelectListItem { Value = r.Id.ToString(), Text = r.Role });
 
-                        AvailableRoles = _employeeRoleRepository
-                            .GetAll()
-                            .Select(r => new SelectListItem
-                            {
-                                Value = r.Id.ToString(),
-                                Text = r.Role,
-                            });
-
-                        ProviderDisplayName = info.ProviderDisplayName;
-                        ReturnUrl = returnUrl;
-                        return Page();
-                    }
+                    ProviderDisplayName = info.ProviderDisplayName;
+                    ReturnUrl = returnUrl;
+                    return Page();
                 }
 
                 var user = CreateUser();
@@ -268,7 +250,7 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                         var employee = new Employee
                         {
                             Name = Input.Name,
-                            StartDate = Input.StartDate,
+                            StartDate = DateTime.SpecifyKind(Input.StartDate, DateTimeKind.Utc),
                             EmployeeRoleId = Input.EmployeeRoleId,
                             UserId = user.Id,
                         };

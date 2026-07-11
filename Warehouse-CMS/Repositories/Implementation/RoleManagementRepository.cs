@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Warehouse_CMS.Models;
 
 namespace Warehouse_CMS.Repositories.Implementation
@@ -33,9 +34,9 @@ namespace Warehouse_CMS.Repositories.Implementation
             }
         }
 
-        public Task<IList<IdentityRole>> GetAllIdentityRolesAsync()
+        public async Task<IList<IdentityRole>> GetAllIdentityRolesAsync()
         {
-            return Task.FromResult<IList<IdentityRole>>(_roleManager.Roles.ToList());
+            return await _roleManager.Roles.ToListAsync();
         }
 
         public async Task<IdentityRole?> GetIdentityRoleByIdAsync(string roleId)

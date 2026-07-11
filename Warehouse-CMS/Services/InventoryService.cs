@@ -59,6 +59,6 @@ public class InventoryService : IInventoryService
 
     public List<Product> GetLowStockProducts(int threshold)
     {
-        return _productRepository.GetAll().Where(p => p.StockQuantity < threshold).ToList();
+        return _productRepository.GetLowStock(threshold).ToList();
     }
 }

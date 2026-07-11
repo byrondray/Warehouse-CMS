@@ -12,41 +12,23 @@ namespace Warehouse_CMS.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IInventoryService _inventoryService;
-        private readonly ApplicationDbContext _dbContext;
 
         private const int LOW_STOCK_THRESHOLD = 5;
 
         public HomeController(
             ILogger<HomeController> logger,
-            IInventoryService inventoryService,
-            ApplicationDbContext dbContext
+            IInventoryService inventoryService
         )
         {
             _logger = logger;
             _inventoryService = inventoryService;
-            _dbContext = dbContext;
         }
 
         public IActionResult Index(bool route = false)
         {
-            ViewBag.TotalProducts = _dbContext.Products.Count();
-
-            var lowStockProducts = _inventoryService.GetLowStockProducts(LOW_STOCK_THRESHOLD);
-            ViewBag.LowStockCount = lowStockProducts.Count;
-            ViewBag.LowStockProducts = lowStockProducts;
-
-            var completedStatusIds = _dbContext
-                .OrderStatuses.Where(s =>
-                    s.Status.ToLower() == "completed" || s.Status.ToLower() == "cancelled"
-                )
-                .Select(s => s.Id)
-                .ToList();
-
-            ViewBag.ActiveOrders = _dbContext.Orders.Count(o =>
-                !completedStatusIds.Contains(o.OrderStatusId)
-            );
-
-            ViewBag.SupplierCount = _dbContext.Suppliers.Count();
+            // Dashboard stat tiles (product/order/supplier counts) are rendered by the
+            // DashboardStats view component; the view only needs the low-stock product list here.
+            ViewBag.LowStockProducts = _inventoryService.GetLowStockProducts(LOW_STOCK_THRESHOLD);
 
             if (route)
             {

@@ -17,8 +17,10 @@ namespace Warehouse_CMS.ViewComponents
 
         public async Task<IViewComponentResult> InvokeAsync()
         {
-            var cancelledStatusIds = await _context
-                .OrderStatuses.Where(s => s.Status == "Completed" || s.Status == "Cancelled")
+            var inactiveStatusIds = await _context
+                .OrderStatuses.Where(s =>
+                    s.Status.ToLower() == "completed" || s.Status.ToLower() == "cancelled"
+                )
                 .Select(s => s.Id)
                 .ToListAsync();
 
@@ -29,7 +31,7 @@ namespace Warehouse_CMS.ViewComponents
                     p.StockQuantity < LowStockThreshold
                 ),
                 ActiveOrders = await _context.Orders.CountAsync(o =>
-                    !cancelledStatusIds.Contains(o.OrderStatusId)
+                    !inactiveStatusIds.Contains(o.OrderStatusId)
                 ),
                 SupplierCount = await _context.Suppliers.CountAsync(),
             };

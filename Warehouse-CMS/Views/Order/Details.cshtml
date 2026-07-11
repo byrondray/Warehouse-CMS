@@ -17,7 +17,7 @@
         <dd class="col-sm-10">@(Model.OrderStatus?.Status ?? "N/A")</dd>
 
         <dt class="col-sm-2">Total Amount</dt>
-        <dd class="col-sm-10">@Model.TotalAmount.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US"))
+        <dd class="col-sm-10">@Model.TotalAmount.ToString("C")
         </dd>
     </dl>
 
@@ -37,9 +37,8 @@
                 <tr>
                     <td>@(item.Product?.Name ?? $"Product ID: {item.ProductId}")</td>
                     <td>@item.Quantity</td>
-                    <td>@item.UnitPrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US"))</td>
-                    <td>@((item.Quantity * item.UnitPrice).ToString("C",
-                                            System.Globalization.CultureInfo.GetCultureInfo("en-US")))</td>
+                    <td>@item.UnitPrice.ToString("C")</td>
+                    <td>@((item.Quantity * item.UnitPrice).ToString("C"))</td>
                     </tr>
             
                 }

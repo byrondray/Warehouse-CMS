@@ -111,10 +111,13 @@
                             data: $form.serialize(),
                             headers: { 'X-Requested-With': 'XMLHttpRequest' },
                             success: function (response) {
-                                if (typeof response === 'object' && response.redirectTo) {
-                                    console.log("SPA redirect to: " + response.redirectTo);
-                                    window.history.pushState({ path: response.redirectTo }, '', response.redirectTo);
-                                    loadContent(response.redirectTo);
+                                var redirectUrl = (typeof response === 'object')
+                                    ? (response.redirectUrl || response.redirectTo)
+                                    : null;
+                                if (redirectUrl) {
+                                    console.log("SPA redirect to: " + redirectUrl);
+                                    window.history.pushState({ path: redirectUrl }, '', redirectUrl);
+                                    loadContent(redirectUrl);
                                 } else {
                                     $('#content-container').html(response);
                                     reattachValidation();

@@ -20,6 +20,15 @@ namespace Warehouse_CMS.Repositories.Implementation
                 .ToList();
         }
 
+        public IEnumerable<Product> GetLowStock(int threshold)
+        {
+            return _dbSet
+                .Where(p => p.StockQuantity < threshold)
+                .Include(p => p.Category)
+                .Include(p => p.Supplier)
+                .ToList();
+        }
+
         public override Product? GetById(int id)
         {
             return _dbSet

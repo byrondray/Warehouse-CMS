@@ -10,6 +10,7 @@ public static class SeedDatabase
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+        var environment = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
 
         EnsureEmployeeRolesExist(dbContext);
 
@@ -120,7 +121,7 @@ public static class SeedDatabase
         }
 
         await SeedIdentityRoles(dbContext, roleManager);
-        await SeedAdminUser(dbContext, userManager, roleManager);
+        await SeedAdminUser(dbContext, userManager, roleManager, environment);
     }
 
     private static void EnsureEmployeeRolesExist(ApplicationDbContext context)
@@ -165,7 +166,8 @@ public static class SeedDatabase
     private static async Task SeedAdminUser(
         ApplicationDbContext dbContext,
         UserManager<IdentityUser> userManager,
-        RoleManager<IdentityRole> roleManager
+        RoleManager<IdentityRole> roleManager,
+        IWebHostEnvironment environment
     )
     {
         if (!await roleManager.RoleExistsAsync("Admin"))
@@ -185,7 +187,24 @@ public static class SeedDatabase
                 EmailConfirmed = true,
             };
 
-            var password = Environment.GetEnvironmentVariable("ADMIN_PASSWORD") ?? "Admin@123456";
+            var isDevLike =
+                environment.IsDevelopment() || environment.IsEnvironment("Testing");
+            var password = Environment.GetEnvironmentVariable("ADMIN_PASSWORD");
+
+            if (string.IsNullOrEmpty(password))
+            {
+                if (!isDevLike)
+                {
+                    // Never create a live admin account with a well-known default password
+                    // outside dev/test: once created, changing ADMIN_PASSWORD has no effect.
+                    throw new InvalidOperationException(
+                        "ADMIN_PASSWORD environment variable must be set to seed the admin user "
+                            + $"in the {environment.EnvironmentName} environment."
+                    );
+                }
+
+                password = "Admin@123456";
+            }
 
             var result = await userManager.CreateAsync(user, password);
 

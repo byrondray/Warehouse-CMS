@@ -212,6 +212,14 @@ namespace Warehouse_CMS.Controllers
                 return View(order);
             }
 
+            if (order.OrderItems.Any(i => i.Quantity < 1))
+            {
+                ModelState.AddModelError("", "Each item must have a quantity of at least 1");
+                ViewBag.Products = _productRepository.GetAll();
+                ViewBag.Customers = _customerRepository.GetAll();
+                return View(order);
+            }
+
             using var transaction = await _dbContext.Database.BeginTransactionAsync();
             try
             {
@@ -248,7 +256,7 @@ namespace Warehouse_CMS.Controllers
                 return View(order);
             }
 
-            return RedirectToAction(nameof(Index));
+            return JsonOrRedirect(nameof(Index));
         }
 
         public IActionResult Details(int id)

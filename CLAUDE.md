@@ -31,40 +31,41 @@ The app is deployed on Railway (CLI is installed and logged in):
 
 - **Project:** `Warehouse-CMS`, **environment:** `production`, **service:** `Warehouse-CMS`
 - **Domain:** https://warehouse-cms-production.up.railway.app
-- **Build:** Dockerfile builder ([railway.json](railway.json)). The [Dockerfile](Dockerfile) does **not** build the app — it copies a pre-built `publish_output/` directory into an `aspnet:8.0-alpine` runtime image. So a deploy requires publishing locally first:
+- **Build:** Dockerfile builder ([railway.json](railway.json)). The [Dockerfile](Dockerfile) is a self-contained multi-stage build (`sdk:8.0-alpine` restore/publish → `aspnet:8.0-alpine` runtime), so it builds reproducibly from source — no local publish step required. Deploy with:
 
 ```powershell
-dotnet publish Warehouse-CMS -c Release -o publish_output /p:ExcludeDevDeps=true
 railway up
 ```
 
-- **Start command:** `dotnet Warehouse-CMS.dll`, restart policy ON_FAILURE (max 10 retries)
-- **Database:** Railway Postgres, injected via the `DATABASE_URL` env var (see provider selection below)
-- Useful CLI: `railway status`, `railway logs`, `railway up`. Note `publish_output/` is gitignored but must exist locally for the Docker build.
-- The port comes from Railway's `PORT` env var (`ASPNETCORE_URLS=http://0.0.0.0:${PORT:-3000}` in the Dockerfile)
+- **Port:** injected by Railway via `PORT` at runtime; the Dockerfile ENTRYPOINT resolves it at container start (`ASPNETCORE_URLS=http://0.0.0.0:${PORT:-3000}`), not at build time.
+- **Restart policy:** ON_FAILURE (max 10 retries)
+- **Database:** Railway Postgres, injected via the `DATABASE_URL` env var
+- **Required env vars in production:** `DATABASE_URL` (Postgres), `ADMIN_PASSWORD` (seeding throws if unset outside Development/Testing), optional `ADMIN_EMAIL`, and `Authentication:Google:ClientId/ClientSecret` for Google login.
+- Useful CLI: `railway status`, `railway logs`, `railway up`.
 - Health check endpoint: `/health` (anonymous)
-
-There is also a legacy GitHub Actions workflow deploying to Azure Web Apps on pushes to the `dbconnection` branch (`.github/workflows/azure-webapps-dotnet-core.yml`).
 
 ## Architecture
 
-### Database provider selection (Program.cs)
+### Database provider (Program.cs)
 
-`ApplicationDbContext` is registered with a provider chosen at startup, in this order:
+The app runs on **PostgreSQL (Npgsql) only**. `ApplicationDbContext` uses:
 
-1. If `DATABASE_URL` is set (Railway) → **PostgreSQL** (Npgsql), URL parsed into a connection string with SSL required
-2. Else in Development/Testing → **SQL Server** via `ConnectionStrings:DefaultConnection` (appsettings.Development.json / user secrets)
-3. Else → **SQL Server** via `ConnectionStrings:AZURE_SQL_CONNECTIONSTRING`
+1. `DATABASE_URL` (Railway) when set — parsed via `BuildNpgsqlConnectionString` (URL-decodes credentials, SSL required), or
+2. `ConnectionStrings:DefaultConnection` for local development (points at local Postgres in appsettings.Development.json).
 
-The single `Migrations/` set is shared across providers — be careful that new migrations work on both Postgres and SQL Server.
+`EnableRetryOnFailure()` is on for transient-fault resilience. Migrations in `Migrations/` are Postgres-flavored — do not reintroduce SQL Server without regenerating them.
 
 ### Startup migration and seeding
 
-In non-Development environments, `Database.Migrate()` runs automatically on startup, followed by `SeedDatabase.SeedAsync()` in all environments. Seeding creates employee roles (Admin, Sales, Manager…), mirrors them into Identity roles, and creates an admin user whose password comes from the `ADMIN_PASSWORD` env var (falls back to a default). Seeding failures are logged but don't stop the app.
+`Database.MigrateAsync()` runs on startup in **all** environments (including Development, so a fresh dev database gets its schema), followed by `SeedDatabase.SeedAsync()`. Seeding creates employee roles (Admin, Sales, Manager…), mirrors them into Identity roles, and creates an admin user. The admin password comes from `ADMIN_PASSWORD`; outside Development/Testing, seeding **throws** if it's unset rather than using a default. The seed call in Program.cs is wrapped in a try/catch that logs failures.
 
 ### Repository pattern
 
-Controllers depend on interfaces in `Repositories/Interfaces/`, implemented by EF classes in `Repositories/Implementation/` (all registered as scoped in Program.cs). `Repositories/Mock/` holds in-memory implementations that are not registered — swap registrations to use them. Business logic that spans repositories lives in `Services/` (e.g. `InventoryService`, `RoleManagementService`).
+Controllers depend on interfaces in `Repositories/Interfaces/`, implemented by EF classes in `Repositories/Implementation/` (all registered as scoped in Program.cs). Business logic that spans repositories lives in `Services/` (e.g. `InventoryService`, `RoleManagementService`).
+
+### SPA-style navigation
+
+`_Layout.cshtml` intercepts non-Identity link clicks and form submits via XHR (`X-Requested-With` header) and swaps `#content-container`. Controllers cooperate through `BaseController`: `ViewOrPartial` returns a partial for AJAX requests and a full view otherwise, and `JsonOrRedirect` returns `{ success, redirectUrl }` JSON (which the layout follows) instead of an HTTP redirect. Full-page `Index` views are thin wrappers that render the same partial the AJAX path returns.
 
 ### Authentication & environments
 

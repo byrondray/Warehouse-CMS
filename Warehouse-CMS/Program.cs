@@ -11,6 +11,12 @@ using Warehouse_CMS.ViewModels;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Pin the app-wide culture so currency/number formatting (ToString("C")) is
+// consistent regardless of the host/container locale (e.g. Alpine on Railway).
+var defaultCulture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+System.Globalization.CultureInfo.DefaultThreadCurrentCulture = defaultCulture;
+System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = defaultCulture;
+
 var environment = builder.Environment.EnvironmentName;
 Console.WriteLine($"Current environment: {environment}");
 
@@ -18,34 +24,48 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
-    if (!string.IsNullOrEmpty(databaseUrl))
-    {
-        var uri = new Uri(databaseUrl);
-        var connectionString =
-            $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={uri.UserInfo.Split(':')[0]};Password={uri.UserInfo.Split(':')[1]};SSL Mode=Require;Trust Server Certificate=true";
-        options.UseNpgsql(connectionString);
-    }
-    else if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
-    {
-        var connectionString =
-            builder.Configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException(
-                "Connection string 'DefaultConnection' not found. Configure it in appsettings.Development.json."
-            );
+    var connectionString = !string.IsNullOrEmpty(databaseUrl)
+        ? BuildNpgsqlConnectionString(databaseUrl)
+        : builder.Configuration.GetConnectionString("DefaultConnection");
 
-        options.UseSqlServer(connectionString).EnableSensitiveDataLogging();
-    }
-    else
+    if (string.IsNullOrEmpty(connectionString))
     {
-        var connectionString =
-            builder.Configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING")
-            ?? throw new InvalidOperationException(
-                "Connection string 'AZURE_SQL_CONNECTIONSTRING' not found."
-            );
+        throw new InvalidOperationException(
+            "No database connection configured. Set the DATABASE_URL environment variable, "
+                + "or a 'DefaultConnection' connection string for local development."
+        );
+    }
 
-        options.UseSqlServer(connectionString);
+    options.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure());
+
+    if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing"))
+    {
+        options.EnableSensitiveDataLogging();
     }
 });
+
+// Parse a Railway/Heroku-style postgres:// URL into an Npgsql connection string.
+// Uri.UserInfo is percent-encoded, so credentials must be unescaped; the password
+// is optional and may itself contain ':'.
+static string BuildNpgsqlConnectionString(string databaseUrl)
+{
+    var uri = new Uri(databaseUrl);
+    var userInfo = uri.UserInfo.Split(':', 2);
+    var username = Uri.UnescapeDataString(userInfo[0]);
+    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+
+    var csb = new Npgsql.NpgsqlConnectionStringBuilder
+    {
+        Host = uri.Host,
+        Port = uri.Port > 0 ? uri.Port : 5432,
+        Database = uri.AbsolutePath.TrimStart('/'),
+        Username = username,
+        Password = password,
+        SslMode = Npgsql.SslMode.Require,
+    };
+
+    return csb.ConnectionString;
+}
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -170,10 +190,7 @@ using (var scope = app.Services.CreateScope())
     {
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
 
-        if (!app.Environment.IsDevelopment())
-        {
-            dbContext.Database.Migrate();
-        }
+        await dbContext.Database.MigrateAsync();
 
         await SeedDatabase.SeedAsync(services);
     }

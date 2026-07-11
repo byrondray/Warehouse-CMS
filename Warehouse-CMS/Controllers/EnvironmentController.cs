@@ -160,6 +160,7 @@ namespace Warehouse_CMS.Controllers
             }
         }
 
+        [AllowAnonymous]
         public new IActionResult StatusCode(int statusCode)
         {
             if (statusCode == 404)
