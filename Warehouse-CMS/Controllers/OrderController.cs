@@ -69,10 +69,12 @@ namespace Warehouse_CMS.Controllers
             return pendingStatus;
         }
 
+        private const int PageSize = 20;
+
         [Authorize(Roles = "Admin,Manager,Sales Associate")]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
-            var orders = (await _orderRepository.GetAllForListAsync()).ToList();
+            var orders = await _orderRepository.GetPagedForListAsync(page, PageSize);
 
             return ViewOrPartial("_OrdersList", orders);
         }

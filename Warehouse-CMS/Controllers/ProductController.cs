@@ -25,9 +25,11 @@ namespace Warehouse_CMS.Controllers
             _supplierRepository = supplierRepository;
         }
 
-        public async Task<IActionResult> Index()
+        private const int PageSize = 20;
+
+        public async Task<IActionResult> Index(int page = 1)
         {
-            var products = (await _repository.GetAllAsync()).Select(p => p.ToViewModel());
+            var products = await _repository.GetPagedAsync(page, PageSize);
 
             if (IsAjaxRequest())
             {

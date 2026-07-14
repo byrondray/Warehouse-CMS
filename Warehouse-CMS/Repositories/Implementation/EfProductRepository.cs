@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Warehouse_CMS.Data;
 using Warehouse_CMS.Models;
+using Warehouse_CMS.ViewModels;
 
 namespace Warehouse_CMS.Repositories.Implementation
 {
@@ -11,6 +12,47 @@ namespace Warehouse_CMS.Repositories.Implementation
     {
         public EfProductRepository(ApplicationDbContext context)
             : base(context) { }
+
+        public async Task<PagedResult<ProductViewModel>> GetPagedAsync(
+            int pageNumber,
+            int pageSize
+        )
+        {
+            if (pageNumber < 1)
+                pageNumber = 1;
+            if (pageSize < 1)
+                pageSize = 20;
+
+            var baseQuery = _dbSet.AsNoTracking().OrderBy(p => p.Name);
+            var totalCount = await baseQuery.CountAsync();
+
+            // Project to the view model in the query so only the needed columns are read;
+            // no entity graph or OrderItems are materialized.
+            var items = await baseQuery
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new ProductViewModel
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Price = p.Price,
+                    StockQuantity = p.StockQuantity,
+                    CategoryId = p.CategoryId,
+                    CategoryName = p.Category != null ? p.Category.Name : null,
+                    SupplierId = p.SupplierId,
+                    SupplierName = p.Supplier != null ? p.Supplier.Name : null,
+                })
+                .ToListAsync();
+
+            return new PagedResult<ProductViewModel>
+            {
+                Items = items,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+            };
+        }
 
         // OrderItems are intentionally not included: the product list/details views only
         // use Category/Supplier, and a product's order history grows unboundedly.

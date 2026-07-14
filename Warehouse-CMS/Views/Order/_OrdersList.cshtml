@@ -1,4 +1,4 @@
-@model IEnumerable<Warehouse_CMS.Models.Order>
+@model Warehouse_CMS.ViewModels.PagedResult<Warehouse_CMS.Models.Order>
 
 <h2>Orders</h2>
 
@@ -18,7 +18,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var item in Model)
+        @foreach (var item in Model.Items)
         {
             <tr>
                 <td>@item.Id</td>
@@ -30,7 +30,26 @@
                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Details</a>
                 </td>
             </tr>
-        
         }
     </tbody>
 </table>
+
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Orders pagination">
+        <ul class="pagination">
+            <li class="page-item @(Model.HasPrevious ? "" : "disabled")">
+                <a class="page-link" asp-action="Index" asp-route-page="@(Model.PageNumber - 1)">Previous</a>
+            </li>
+            @for (int p = 1; p <= Model.TotalPages; p++)
+            {
+                <li class="page-item @(p == Model.PageNumber ? "active" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@p">@p</a>
+                </li>
+            }
+            <li class="page-item @(Model.HasNext ? "" : "disabled")">
+                <a class="page-link" asp-action="Index" asp-route-page="@(Model.PageNumber + 1)">Next</a>
+            </li>
+        </ul>
+    </nav>
+}

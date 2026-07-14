@@ -1,13 +1,14 @@
 using Warehouse_CMS.Models;
+using Warehouse_CMS.ViewModels;
 
 namespace Warehouse_CMS.Repositories
 {
     public interface IOrderRepository : IRepository<Order>, IAsyncRepository<Order>
     {
         /// <summary>
-        /// Lightweight projection for the orders list: includes only Customer and OrderStatus
-        /// (what the list view renders), not the full item/product graph.
+        /// One page of orders for the list view: includes only Customer and OrderStatus
+        /// (what the list renders), not the full item/product graph, newest first.
         /// </summary>
-        Task<IEnumerable<Order>> GetAllForListAsync();
+        Task<PagedResult<Order>> GetPagedForListAsync(int pageNumber, int pageSize);
     }
 }

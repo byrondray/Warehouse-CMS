@@ -1,4 +1,4 @@
-@model IEnumerable<Warehouse_CMS.ViewModels.ProductViewModel>
+@model Warehouse_CMS.ViewModels.PagedResult<Warehouse_CMS.ViewModels.ProductViewModel>
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -9,16 +9,16 @@
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>@Html.DisplayNameFor(model => model.Name)</th>
-                <th>@Html.DisplayNameFor(model => model.CategoryName)</th>
-                <th>@Html.DisplayNameFor(model => model.SupplierName)</th>
-                <th>@Html.DisplayNameFor(model => model.Price)</th>
-                <th>@Html.DisplayNameFor(model => model.StockQuantity)</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Supplier</th>
+                <th>Price</th>
+                <th>Stock Quantity</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in Model)
+            @foreach (var item in Model.Items)
             {
                 <tr>
                     <td>@item.Name</td>
@@ -34,8 +34,27 @@
                         </div>
                     </td>
                 </tr>
-            
             }
         </tbody>
     </table>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="Products pagination">
+            <ul class="pagination">
+                <li class="page-item @(Model.HasPrevious ? "" : "disabled")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(Model.PageNumber - 1)">Previous</a>
+                </li>
+                @for (int p = 1; p <= Model.TotalPages; p++)
+                {
+                    <li class="page-item @(p == Model.PageNumber ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@p">@p</a>
+                    </li>
+                }
+                <li class="page-item @(Model.HasNext ? "" : "disabled")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(Model.PageNumber + 1)">Next</a>
+                </li>
+            </ul>
+        </nav>
+    }
 </div>

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Warehouse_CMS.Data;
 using Warehouse_CMS.Models;
+using Warehouse_CMS.ViewModels;
 
 namespace Warehouse_CMS.Repositories.Implementation
 {
@@ -30,14 +31,30 @@ namespace Warehouse_CMS.Repositories.Implementation
             return await WithFullGraph().ToListAsync();
         }
 
-        public async Task<IEnumerable<Order>> GetAllForListAsync()
+        public async Task<PagedResult<Order>> GetPagedForListAsync(int pageNumber, int pageSize)
         {
-            return await _dbSet
-                .AsNoTracking()
+            if (pageNumber < 1)
+                pageNumber = 1;
+            if (pageSize < 1)
+                pageSize = 20;
+
+            var baseQuery = _dbSet.AsNoTracking().OrderByDescending(o => o.OrderDate);
+            var totalCount = await baseQuery.CountAsync();
+
+            var items = await baseQuery
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .Include(o => o.Customer)
                 .Include(o => o.OrderStatus)
-                .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
+
+            return new PagedResult<Order>
+            {
+                Items = items,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+            };
         }
 
         public override Order? GetById(int id)
