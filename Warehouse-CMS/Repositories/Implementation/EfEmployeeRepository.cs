@@ -37,27 +37,5 @@ namespace Warehouse_CMS.Repositories.Implementation
                 .Include(e => e.Orders)
                 .FirstOrDefaultAsync(e => e.Id == id);
         }
-
-        public override async Task AddAsync(Employee employee)
-        {
-            await _dbSet.AddAsync(employee);
-            await _context.SaveChangesAsync();
-        }
-
-        public override async Task UpdateAsync(Employee employee)
-        {
-            _dbSet.Update(employee);
-            await _context.SaveChangesAsync();
-        }
-
-        public override async Task DeleteAsync(int id)
-        {
-            var employee = await _dbSet.FindAsync(id);
-            if (employee != null)
-            {
-                _dbSet.Remove(employee);
-                await _context.SaveChangesAsync();
-            }
-        }
     }
 }

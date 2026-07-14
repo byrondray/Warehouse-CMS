@@ -25,9 +25,9 @@ namespace Warehouse_CMS.Controllers
             _supplierRepository = supplierRepository;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var products = _repository.GetAll().Select(p => p.ToViewModel());
+            var products = (await _repository.GetAllAsync()).Select(p => p.ToViewModel());
 
             if (IsAjaxRequest())
             {
@@ -37,9 +37,9 @@ namespace Warehouse_CMS.Controllers
             return View(products);
         }
 
-        public IActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
-            var product = _repository.GetById(id);
+            var product = await _repository.GetByIdAsync(id);
             if (product == null)
             {
                 return NotFound();
@@ -60,12 +60,12 @@ namespace Warehouse_CMS.Controllers
         }
 
         [Authorize(Roles = "Admin,Manager")]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
             var viewModel = new ProductViewModel
             {
-                CategoryList = new SelectList(_categoryRepository.GetAll(), "Id", "Name"),
-                SupplierList = new SelectList(_supplierRepository.GetAll(), "Id", "Name"),
+                CategoryList = new SelectList(await _categoryRepository.GetAllAsync(), "Id", "Name"),
+                SupplierList = new SelectList(await _supplierRepository.GetAllAsync(), "Id", "Name"),
             };
 
             return ViewOrPartial("_CreateProduct", viewModel);
@@ -74,7 +74,7 @@ namespace Warehouse_CMS.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Manager")]
-        public IActionResult Create(ProductViewModel viewModel)
+        public async Task<IActionResult> Create(ProductViewModel viewModel)
         {
             if (ModelState.IsValid)
             {
@@ -88,19 +88,19 @@ namespace Warehouse_CMS.Controllers
                     SupplierId = viewModel.SupplierId,
                 };
 
-                _repository.Add(product);
+                await _repository.AddAsync(product);
 
                 return JsonOrRedirect(nameof(Index));
             }
 
             viewModel.CategoryList = new SelectList(
-                _categoryRepository.GetAll(),
+                await _categoryRepository.GetAllAsync(),
                 "Id",
                 "Name",
                 viewModel.CategoryId
             );
             viewModel.SupplierList = new SelectList(
-                _supplierRepository.GetAll(),
+                await _supplierRepository.GetAllAsync(),
                 "Id",
                 "Name",
                 viewModel.SupplierId
@@ -110,9 +110,9 @@ namespace Warehouse_CMS.Controllers
         }
 
         [Authorize(Roles = "Admin,Manager")]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var product = _repository.GetById(id);
+            var product = await _repository.GetByIdAsync(id);
             if (product == null)
             {
                 return NotFound();
@@ -120,13 +120,13 @@ namespace Warehouse_CMS.Controllers
 
             var viewModel = product.ToViewModel();
             viewModel.CategoryList = new SelectList(
-                _categoryRepository.GetAll(),
+                await _categoryRepository.GetAllAsync(),
                 "Id",
                 "Name",
                 product.CategoryId
             );
             viewModel.SupplierList = new SelectList(
-                _supplierRepository.GetAll(),
+                await _supplierRepository.GetAllAsync(),
                 "Id",
                 "Name",
                 product.SupplierId
@@ -138,7 +138,7 @@ namespace Warehouse_CMS.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Manager")]
-        public IActionResult Edit(int id, ProductViewModel viewModel)
+        public async Task<IActionResult> Edit(int id, ProductViewModel viewModel)
         {
             if (id != viewModel.Id)
             {
@@ -158,19 +158,19 @@ namespace Warehouse_CMS.Controllers
                     SupplierId = viewModel.SupplierId,
                 };
 
-                _repository.Update(product);
+                await _repository.UpdateAsync(product);
 
                 return JsonOrRedirect(nameof(Index));
             }
 
             viewModel.CategoryList = new SelectList(
-                _categoryRepository.GetAll(),
+                await _categoryRepository.GetAllAsync(),
                 "Id",
                 "Name",
                 viewModel.CategoryId
             );
             viewModel.SupplierList = new SelectList(
-                _supplierRepository.GetAll(),
+                await _supplierRepository.GetAllAsync(),
                 "Id",
                 "Name",
                 viewModel.SupplierId
@@ -180,9 +180,9 @@ namespace Warehouse_CMS.Controllers
         }
 
         [Authorize(Roles = "Admin,Manager")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var product = _repository.GetById(id);
+            var product = await _repository.GetByIdAsync(id);
             if (product == null)
             {
                 return NotFound();
@@ -196,9 +196,9 @@ namespace Warehouse_CMS.Controllers
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Manager")]
-        public IActionResult DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            _repository.Delete(id);
+            await _repository.DeleteAsync(id);
 
             return JsonOrRedirect(nameof(Index));
         }

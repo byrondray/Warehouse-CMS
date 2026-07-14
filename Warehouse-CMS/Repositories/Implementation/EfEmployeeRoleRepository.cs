@@ -32,26 +32,9 @@ namespace Warehouse_CMS.Repositories.Implementation
             return await _dbSet.Include(r => r.Employees).FirstOrDefaultAsync(r => r.Id == id);
         }
 
-        public override async Task AddAsync(EmployeeRole entity)
+        public async Task<EmployeeRole?> GetByNameAsync(string roleName)
         {
-            await _dbSet.AddAsync(entity);
-            await _context.SaveChangesAsync();
-        }
-
-        public override async Task UpdateAsync(EmployeeRole entity)
-        {
-            _dbSet.Update(entity);
-            await _context.SaveChangesAsync();
-        }
-
-        public override async Task DeleteAsync(int id)
-        {
-            var entity = await _dbSet.FindAsync(id);
-            if (entity != null)
-            {
-                _dbSet.Remove(entity);
-                await _context.SaveChangesAsync();
-            }
+            return await _dbSet.FirstOrDefaultAsync(r => r.Role == roleName);
         }
     }
 }

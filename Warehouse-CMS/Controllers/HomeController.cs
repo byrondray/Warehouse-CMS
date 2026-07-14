@@ -24,11 +24,13 @@ namespace Warehouse_CMS.Controllers
             _inventoryService = inventoryService;
         }
 
-        public IActionResult Index(bool route = false)
+        public async Task<IActionResult> Index(bool route = false)
         {
             // Dashboard stat tiles (product/order/supplier counts) are rendered by the
             // DashboardStats view component; the view only needs the low-stock product list here.
-            ViewBag.LowStockProducts = _inventoryService.GetLowStockProducts(LOW_STOCK_THRESHOLD);
+            ViewBag.LowStockProducts = await _inventoryService.GetLowStockProductsAsync(
+                LOW_STOCK_THRESHOLD
+            );
 
             if (route)
             {
@@ -45,11 +47,7 @@ namespace Warehouse_CMS.Controllers
 
         public IActionResult Privacy()
         {
-            if (IsAjaxRequest())
-            {
-                return PartialView("_Privacy");
-            }
-            return View();
+            return ViewOrPartial("_Privacy");
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

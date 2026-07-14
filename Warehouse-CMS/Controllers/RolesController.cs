@@ -92,8 +92,8 @@ namespace Warehouse_CMS.Controllers
                 return NotFound();
             }
 
-            var employeeRole = (await _employeeRoleRepository.GetAllAsync()).FirstOrDefault(r =>
-                r.Role == identityRole.Name
+            var employeeRole = await _employeeRoleRepository.GetByNameAsync(
+                identityRole.Name ?? string.Empty
             );
 
             var viewModel = new EditRoleViewModel
@@ -133,8 +133,8 @@ namespace Warehouse_CMS.Controllers
 
                 if (updateResult)
                 {
-                    var employeeRole = (await _employeeRoleRepository.GetAllAsync()).FirstOrDefault(
-                        r => r.Role == oldRoleName
+                    var employeeRole = await _employeeRoleRepository.GetByNameAsync(
+                        oldRoleName ?? string.Empty
                     );
 
                     if (employeeRole != null)
@@ -163,8 +163,8 @@ namespace Warehouse_CMS.Controllers
                 return NotFound();
             }
 
-            var employeeRole = (await _employeeRoleRepository.GetAllAsync()).FirstOrDefault(r =>
-                r.Role == identityRole.Name
+            var employeeRole = await _employeeRoleRepository.GetByNameAsync(
+                identityRole.Name ?? string.Empty
             );
 
             var viewModel = new DeleteRoleViewModel
@@ -194,8 +194,8 @@ namespace Warehouse_CMS.Controllers
 
             if (deleteResult)
             {
-                var employeeRole = (await _employeeRoleRepository.GetAllAsync()).FirstOrDefault(r =>
-                    r.Role == roleName
+                var employeeRole = await _employeeRoleRepository.GetByNameAsync(
+                    roleName ?? string.Empty
                 );
 
                 if (employeeRole != null)
@@ -254,32 +254,20 @@ namespace Warehouse_CMS.Controllers
 
             var roleName = role.Name ?? string.Empty;
             var usersInRole = await _roleRepository.GetUsersInRoleAsync(roleName);
-
-            var allRoles = await _roleRepository.GetAllIdentityRolesAsync();
-            var otherRoleNames = allRoles
-                .Where(r => r.Name != roleName)
-                .Select(r => r.Name ?? string.Empty)
-                .ToList();
+            var userIdsInRole = usersInRole.Select(u => u.Id).ToHashSet();
 
             foreach (var user in model.Users)
             {
-                var isInRole = usersInRole.Any(u => u.Id == user.UserId);
+                var isInRole = userIdsInRole.Contains(user.UserId);
 
                 if (user.IsSelected && !isInRole)
                 {
-                    foreach (var otherRoleName in otherRoleNames)
+                    // Enforce single-role membership: fetch this user's current roles once and
+                    // remove only the ones they actually hold, rather than probing every role.
+                    var currentRoles = await _roleRepository.GetUserRolesAsync(user.UserId);
+                    foreach (var currentRole in currentRoles.Where(r => r != roleName))
                     {
-                        var isInOtherRole = await _roleRepository.IsUserInRoleAsync(
-                            user.UserId,
-                            otherRoleName
-                        );
-                        if (isInOtherRole)
-                        {
-                            await _roleRepository.RemoveUserFromRoleAsync(
-                                user.UserId,
-                                otherRoleName
-                            );
-                        }
+                        await _roleRepository.RemoveUserFromRoleAsync(user.UserId, currentRole);
                     }
 
                     await _roleRepository.AddUserToRoleAsync(user.UserId, roleName);

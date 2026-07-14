@@ -3,10 +3,8 @@ using Warehouse_CMS.Repositories;
 
 public interface IInventoryService
 {
-    bool CheckStock(int productId, int requestedQuantity);
-    void UpdateStock(int productId, int quantity, bool isAddition);
-    string? DeductStockForOrderItem(OrderItem item);
-    List<Product> GetLowStockProducts(int threshold);
+    Task<string?> DeductStockForOrderItemAsync(OrderItem item);
+    Task<List<Product>> GetLowStockProductsAsync(int threshold);
 }
 
 public class InventoryService : IInventoryService
@@ -18,34 +16,9 @@ public class InventoryService : IInventoryService
         _productRepository = productRepository;
     }
 
-    public bool CheckStock(int productId, int requestedQuantity)
+    public async Task<string?> DeductStockForOrderItemAsync(OrderItem item)
     {
-        var product = _productRepository.GetById(productId);
-        return product?.StockQuantity >= requestedQuantity;
-    }
-
-    public void UpdateStock(int productId, int quantity, bool isAddition)
-    {
-        var product = _productRepository.GetById(productId);
-        if (product == null)
-            return;
-
-        var newQuantity = isAddition
-            ? product.StockQuantity + quantity
-            : product.StockQuantity - quantity;
-
-        if (newQuantity < 0)
-            throw new InvalidOperationException(
-                $"Insufficient stock for product '{product.Name}'. Available: {product.StockQuantity}, Requested: {quantity}"
-            );
-
-        product.StockQuantity = newQuantity;
-        _productRepository.Update(product);
-    }
-
-    public string? DeductStockForOrderItem(OrderItem item)
-    {
-        var product = _productRepository.GetById(item.ProductId);
+        var product = await _productRepository.GetByIdAsync(item.ProductId);
         if (product == null)
             return $"Product with ID {item.ProductId} not found";
 
@@ -54,11 +27,15 @@ public class InventoryService : IInventoryService
 
         product.StockQuantity -= item.Quantity;
         item.UnitPrice = product.Price;
+
+        // Persist the stock change explicitly rather than relying on a later SaveChanges
+        // (e.g. when the order is added) to flush this tracked entity by side effect.
+        await _productRepository.UpdateAsync(product);
         return null;
     }
 
-    public List<Product> GetLowStockProducts(int threshold)
+    public async Task<List<Product>> GetLowStockProductsAsync(int threshold)
     {
-        return _productRepository.GetLowStock(threshold).ToList();
+        return (await _productRepository.GetLowStockAsync(threshold)).ToList();
     }
 }

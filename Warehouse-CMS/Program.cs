@@ -175,28 +175,37 @@ builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IRoleManagementRepository, RoleManagementRepository>();
 builder.Services.AddScoped<IEmployeeIdentityRepository, EmployeeIdentityRepository>();
 
-builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
-
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddRazorPages();
+
+// Health check that actually verifies the database is reachable, so /health reflects
+// real readiness (a liveness-only stub would report healthy even with Postgres down).
+builder
+    .Services.AddHealthChecks()
+    .AddDbContextCheck<ApplicationDbContext>(name: "database");
 
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    // Migration failures leave the app in a broken state (every request would error at
+    // runtime), so fail fast and let the platform's restart policy retry rather than
+    // starting up against an unmigrated database.
+    var dbContext = services.GetRequiredService<ApplicationDbContext>();
+    await dbContext.Database.MigrateAsync();
+
+    // Seeding is best-effort: a seed failure (e.g. ADMIN_PASSWORD unset) should be logged
+    // loudly but must not take down an otherwise-healthy app.
     try
     {
-        var dbContext = services.GetRequiredService<ApplicationDbContext>();
-
-        await dbContext.Database.MigrateAsync();
-
         await SeedDatabase.SeedAsync(services);
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while seeding the database.");
     }
 }
@@ -251,7 +260,7 @@ app.MapControllerRoute(
 
 app.MapFallbackToController("Index", "Home");
 
-app.MapGet("/health", () => Results.Ok("healthy")).AllowAnonymous();
+app.MapHealthChecks("/health").AllowAnonymous();
 
 app.MapRazorPages();
 

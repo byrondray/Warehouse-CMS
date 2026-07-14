@@ -2,12 +2,12 @@ using Warehouse_CMS.Models;
 
 namespace Warehouse_CMS.Repositories
 {
-    public interface IOrderRepository
+    public interface IOrderRepository : IRepository<Order>, IAsyncRepository<Order>
     {
-        IEnumerable<Order> GetAll();
-        Order? GetById(int id);
-        void Add(Order order);
-        void Update(Order order);
-        void Delete(int id);
+        /// <summary>
+        /// Lightweight projection for the orders list: includes only Customer and OrderStatus
+        /// (what the list view renders), not the full item/product graph.
+        /// </summary>
+        Task<IEnumerable<Order>> GetAllForListAsync();
     }
 }

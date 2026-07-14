@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Warehouse_CMS.Data;
 using Warehouse_CMS.Models;
 using Warehouse_CMS.Repositories;
+using Warehouse_CMS.ViewModels;
 
 namespace Warehouse_CMS.Controllers
 {
@@ -19,6 +20,7 @@ namespace Warehouse_CMS.Controllers
         private readonly IInventoryService _inventoryService;
         private readonly ApplicationDbContext _dbContext;
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly ILogger<OrderController> _logger;
 
         public OrderController(
             IOrderRepository orderRepository,
@@ -29,7 +31,8 @@ namespace Warehouse_CMS.Controllers
             IEmployeeIdentityRepository employeeIdentityRepository,
             IInventoryService inventoryService,
             ApplicationDbContext dbContext,
-            UserManager<IdentityUser> userManager
+            UserManager<IdentityUser> userManager,
+            ILogger<OrderController> logger
         )
         {
             _orderRepository = orderRepository;
@@ -41,31 +44,43 @@ namespace Warehouse_CMS.Controllers
             _inventoryService = inventoryService;
             _dbContext = dbContext;
             _userManager = userManager;
+            _logger = logger;
         }
 
-        public IActionResult Index()
+        // The order create/edit form always needs the product and customer pick lists;
+        // populate them in one place so the many re-display paths stay in sync.
+        private async Task PopulateOrderFormListsAsync()
         {
-            var orders = _orderRepository.GetAll().ToList();
-
-            if (IsAjaxRequest())
-            {
-                return PartialView("_OrdersList", orders);
-            }
-
-            return View(orders);
+            ViewBag.Products = await _productRepository.GetAllAsync();
+            ViewBag.Customers = await _customerRepository.GetAllAsync();
         }
 
-        [Authorize(Roles = "Admin,Manager,Sales Associate")]
-        public IActionResult Create()
+        private async Task<OrderStatus> GetOrCreatePendingStatusAsync()
         {
-            var pendingStatus = _orderStatusRepository
-                .GetAll()
-                .FirstOrDefault(s => s.Status == "Pending");
+            var pendingStatus = (await _orderStatusRepository.GetAllAsync()).FirstOrDefault(s =>
+                s.Status == "Pending"
+            );
             if (pendingStatus == null)
             {
                 pendingStatus = new OrderStatus { Status = "Pending" };
-                _orderStatusRepository.Add(pendingStatus);
+                await _orderStatusRepository.AddAsync(pendingStatus);
             }
+
+            return pendingStatus;
+        }
+
+        [Authorize(Roles = "Admin,Manager,Sales Associate")]
+        public async Task<IActionResult> Index()
+        {
+            var orders = (await _orderRepository.GetAllForListAsync()).ToList();
+
+            return ViewOrPartial("_OrdersList", orders);
+        }
+
+        [Authorize(Roles = "Admin,Manager,Sales Associate")]
+        public async Task<IActionResult> Create()
+        {
+            var pendingStatus = await GetOrCreatePendingStatusAsync();
 
             var order = new Order
             {
@@ -75,15 +90,9 @@ namespace Warehouse_CMS.Controllers
                 OrderItems = new List<OrderItem> { new OrderItem { Quantity = 1 } },
             };
 
-            ViewBag.Products = _productRepository.GetAll();
-            ViewBag.Customers = _customerRepository.GetAll();
+            await PopulateOrderFormListsAsync();
 
-            if (IsAjaxRequest())
-            {
-                return PartialView("_CreateOrder", order);
-            }
-
-            return View(order);
+            return ViewOrPartial("_CreateOrder", order);
         }
 
         [HttpPost]
@@ -113,8 +122,7 @@ namespace Warehouse_CMS.Controllers
                     "",
                     "Your user account is not linked to an employee record"
                 );
-                ViewBag.Products = _productRepository.GetAll();
-                ViewBag.Customers = _customerRepository.GetAll();
+                await PopulateOrderFormListsAsync();
                 return View(
                     new Order
                     {
@@ -124,14 +132,7 @@ namespace Warehouse_CMS.Controllers
                 );
             }
 
-            var pendingStatus = _orderStatusRepository
-                .GetAll()
-                .FirstOrDefault(s => s.Status == "Pending");
-            if (pendingStatus == null)
-            {
-                pendingStatus = new OrderStatus { Status = "Pending" };
-                _orderStatusRepository.Add(pendingStatus);
-            }
+            var pendingStatus = await GetOrCreatePendingStatusAsync();
 
             var order = new Order
             {
@@ -146,19 +147,18 @@ namespace Warehouse_CMS.Controllers
             Customer? customer = null;
             if (CustomerId > 0)
             {
-                customer = _customerRepository.GetById(CustomerId);
+                customer = await _customerRepository.GetByIdAsync(CustomerId);
             }
             else if (!string.IsNullOrWhiteSpace(CustomerName))
             {
                 customer = new Customer { Name = CustomerName, CreatedAt = DateTime.UtcNow };
-                _customerRepository.Add(customer);
+                await _customerRepository.AddAsync(customer);
             }
 
             if (customer == null)
             {
                 ModelState.AddModelError("", "A customer must be selected or created");
-                ViewBag.Products = _productRepository.GetAll();
-                ViewBag.Customers = _customerRepository.GetAll();
+                await PopulateOrderFormListsAsync();
                 return View(order);
             }
 
@@ -168,8 +168,7 @@ namespace Warehouse_CMS.Controllers
             if (action == "addItem")
             {
                 order.OrderItems.Add(new OrderItem { Quantity = 1 });
-                ViewBag.Products = _productRepository.GetAll();
-                ViewBag.Customers = _customerRepository.GetAll();
+                await PopulateOrderFormListsAsync();
                 return View(order);
             }
 
@@ -186,8 +185,7 @@ namespace Warehouse_CMS.Controllers
                     order.OrderItems.Add(new OrderItem { Quantity = 1 });
                 }
 
-                ViewBag.Products = _productRepository.GetAll();
-                ViewBag.Customers = _customerRepository.GetAll();
+                await PopulateOrderFormListsAsync();
                 return View(order);
             }
 
@@ -207,16 +205,14 @@ namespace Warehouse_CMS.Controllers
             if (!order.OrderItems.Any() || order.OrderItems.Any(i => i.ProductId <= 0))
             {
                 ModelState.AddModelError("", "You must select a product for each item");
-                ViewBag.Products = _productRepository.GetAll();
-                ViewBag.Customers = _customerRepository.GetAll();
+                await PopulateOrderFormListsAsync();
                 return View(order);
             }
 
             if (order.OrderItems.Any(i => i.Quantity < 1))
             {
                 ModelState.AddModelError("", "Each item must have a quantity of at least 1");
-                ViewBag.Products = _productRepository.GetAll();
-                ViewBag.Customers = _customerRepository.GetAll();
+                await PopulateOrderFormListsAsync();
                 return View(order);
             }
 
@@ -226,13 +222,12 @@ namespace Warehouse_CMS.Controllers
                 decimal totalAmount = 0;
                 foreach (var item in order.OrderItems)
                 {
-                    var stockError = _inventoryService.DeductStockForOrderItem(item);
+                    var stockError = await _inventoryService.DeductStockForOrderItemAsync(item);
                     if (stockError != null)
                     {
                         await transaction.RollbackAsync();
                         ModelState.AddModelError("", stockError);
-                        ViewBag.Products = _productRepository.GetAll();
-                        ViewBag.Customers = _customerRepository.GetAll();
+                        await PopulateOrderFormListsAsync();
                         return View(order);
                     }
 
@@ -240,28 +235,29 @@ namespace Warehouse_CMS.Controllers
                 }
 
                 order.TotalAmount = totalAmount;
-                _orderRepository.Add(order);
+                await _orderRepository.AddAsync(order);
 
                 await transaction.CommitAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                _logger.LogError(ex, "An error occurred while creating an order.");
                 ModelState.AddModelError(
                     "",
                     "An error occurred while creating the order. Please try again."
                 );
-                ViewBag.Products = _productRepository.GetAll();
-                ViewBag.Customers = _customerRepository.GetAll();
+                await PopulateOrderFormListsAsync();
                 return View(order);
             }
 
             return JsonOrRedirect(nameof(Index));
         }
 
-        public IActionResult Details(int id)
+        [Authorize(Roles = "Admin,Manager,Sales Associate")]
+        public async Task<IActionResult> Details(int id)
         {
-            var order = _orderRepository.GetById(id);
+            var order = await _orderRepository.GetByIdAsync(id);
             if (order == null)
             {
                 return NotFound();
@@ -272,40 +268,46 @@ namespace Warehouse_CMS.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin,Manager,Sales Associate")]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var order = _orderRepository.GetById(id);
+            var order = await _orderRepository.GetByIdAsync(id);
             if (order == null)
             {
                 return NotFound();
             }
 
-            ViewBag.OrderStatuses = _orderStatusRepository.GetAll();
-            return View(order);
+            var viewModel = new OrderEditViewModel
+            {
+                Id = order.Id,
+                OrderStatusId = order.OrderStatusId,
+            };
+
+            ViewBag.OrderStatuses = await _orderStatusRepository.GetAllAsync();
+            return View(viewModel);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Manager,Sales Associate")]
-        public IActionResult Edit(Order order)
+        public async Task<IActionResult> Edit(OrderEditViewModel model)
         {
             if (ModelState.IsValid)
             {
-                var originalOrder = _orderRepository.GetById(order.Id);
+                var originalOrder = await _orderRepository.GetByIdAsync(model.Id);
                 if (originalOrder == null)
                 {
                     return NotFound();
                 }
 
-                originalOrder.OrderStatusId = order.OrderStatusId;
+                originalOrder.OrderStatusId = model.OrderStatusId;
 
-                _orderRepository.Update(originalOrder);
+                await _orderRepository.UpdateAsync(originalOrder);
 
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewBag.OrderStatuses = _orderStatusRepository.GetAll();
-            return View(order);
+            ViewBag.OrderStatuses = await _orderStatusRepository.GetAllAsync();
+            return View(model);
         }
     }
 }

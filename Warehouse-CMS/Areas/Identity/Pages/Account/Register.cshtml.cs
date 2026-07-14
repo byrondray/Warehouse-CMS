@@ -101,6 +101,14 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
             public int EmployeeRoleId { get; set; }
         }
 
+        // Only non-privileged roles may be self-assigned at registration; Admin/Manager
+        // are granted by an existing admin through the Roles UI, never picked by the registrant.
+        private async Task<IEnumerable<SelectListItem>> GetSelfAssignableRolesAsync() =>
+            (await _employeeRoleRepository.GetAllAsync())
+                .Where(r => !RoleConstants.IsPrivileged(r.Role))
+                .Select(r => new SelectListItem { Value = r.Id.ToString(), Text = r.Role })
+                .ToList();
+
         public async Task OnGetAsync(string? returnUrl = null)
         {
             ReturnUrl = returnUrl ?? string.Empty;
@@ -108,9 +116,7 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                 await _signInManager.GetExternalAuthenticationSchemesAsync()
             ).ToList();
 
-            AvailableRoles = _employeeRoleRepository
-                .GetAll()
-                .Select(r => new SelectListItem { Value = r.Id.ToString(), Text = r.Role });
+            AvailableRoles = await GetSelfAssignableRolesAsync();
         }
 
         public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
@@ -120,9 +126,18 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                 await _signInManager.GetExternalAuthenticationSchemesAsync()
             ).ToList();
 
-            AvailableRoles = _employeeRoleRepository
-                .GetAll()
-                .Select(r => new SelectListItem { Value = r.Id.ToString(), Text = r.Role });
+            AvailableRoles = await GetSelfAssignableRolesAsync();
+
+            // Never trust the submitted role id: reject any attempt to self-assign a privileged
+            // role, even one crafted directly against the POST bypassing the dropdown.
+            var requestedRole = await _employeeRoleRepository.GetByIdAsync(Input.EmployeeRoleId);
+            if (requestedRole == null || RoleConstants.IsPrivileged(requestedRole.Role))
+            {
+                ModelState.AddModelError(
+                    "Input.EmployeeRoleId",
+                    "Please select a valid role. Administrative roles are assigned by a manager."
+                );
+            }
 
             if (ModelState.IsValid)
             {
@@ -144,13 +159,10 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                         UserId = user.Id,
                     };
 
-                    _employeeRepository.Add(employee);
+                    await _employeeRepository.AddAsync(employee);
 
-                    var employeeRole = _employeeRoleRepository.GetById(Input.EmployeeRoleId);
-                    if (employeeRole != null)
-                    {
-                        await _userManager.AddToRoleAsync(user, employeeRole.Role);
-                    }
+                    // requestedRole was validated above and is guaranteed non-null and non-privileged here.
+                    await _userManager.AddToRoleAsync(user, requestedRole!.Role);
 
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);

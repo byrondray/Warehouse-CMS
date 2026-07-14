@@ -62,6 +62,14 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
         public IEnumerable<SelectListItem> AvailableRoles { get; set; } =
             Enumerable.Empty<SelectListItem>();
 
+        // Only non-privileged roles may be self-assigned during external-login registration;
+        // Admin/Manager are granted by an existing admin through the Roles UI.
+        private async Task<IEnumerable<SelectListItem>> GetSelfAssignableRolesAsync() =>
+            (await _employeeRoleRepository.GetAllAsync())
+                .Where(r => !RoleConstants.IsPrivileged(r.Role))
+                .Select(r => new SelectListItem { Value = r.Id.ToString(), Text = r.Role })
+                .ToList();
+
         public class InputModel
         {
             [Required]
@@ -137,9 +145,7 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
             }
             else
             {
-                AvailableRoles = _employeeRoleRepository
-                    .GetAll()
-                    .Select(r => new SelectListItem { Value = r.Id.ToString(), Text = r.Role });
+                AvailableRoles = await GetSelfAssignableRolesAsync();
 
                 ReturnUrl = returnUrl;
                 ProviderDisplayName = info.ProviderDisplayName;
@@ -222,10 +228,24 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                             + "Please sign in with your existing credentials first, then you can link your Google account in your profile settings."
                     );
 
-                    AvailableRoles = _employeeRoleRepository
-                        .GetAll()
-                        .Select(r => new SelectListItem { Value = r.Id.ToString(), Text = r.Role });
+                    AvailableRoles = await GetSelfAssignableRolesAsync();
 
+                    ProviderDisplayName = info.ProviderDisplayName;
+                    ReturnUrl = returnUrl;
+                    return Page();
+                }
+
+                // Never trust the submitted role id: reject any attempt to self-assign a
+                // privileged role, even one crafted directly against the POST.
+                var requestedRole = await _employeeRoleRepository.GetByIdAsync(Input.EmployeeRoleId);
+                if (requestedRole == null || RoleConstants.IsPrivileged(requestedRole.Role))
+                {
+                    ModelState.AddModelError(
+                        "Input.EmployeeRoleId",
+                        "Please select a valid role. Administrative roles are assigned by a manager."
+                    );
+
+                    AvailableRoles = await GetSelfAssignableRolesAsync();
                     ProviderDisplayName = info.ProviderDisplayName;
                     ReturnUrl = returnUrl;
                     return Page();
@@ -255,13 +275,10 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                             UserId = user.Id,
                         };
 
-                        _employeeRepository.Add(employee);
+                        await _employeeRepository.AddAsync(employee);
 
-                        var employeeRole = _employeeRoleRepository.GetById(Input.EmployeeRoleId);
-                        if (employeeRole != null)
-                        {
-                            await _userManager.AddToRoleAsync(user, employeeRole.Role);
-                        }
+                        // requestedRole was validated above: non-null and non-privileged.
+                        await _userManager.AddToRoleAsync(user, requestedRole!.Role);
 
                         var userId = await _userManager.GetUserIdAsync(user);
                         var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -307,9 +324,7 @@ namespace Warehouse_CMS.Areas.Identity.Pages.Account
                 }
             }
 
-            AvailableRoles = _employeeRoleRepository
-                .GetAll()
-                .Select(r => new SelectListItem { Value = r.Id.ToString(), Text = r.Role });
+            AvailableRoles = await GetSelfAssignableRolesAsync();
 
             ProviderDisplayName = info.ProviderDisplayName;
             ReturnUrl = returnUrl;

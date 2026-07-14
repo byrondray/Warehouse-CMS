@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Warehouse_CMS.Data;
+using Warehouse_CMS.Repositories;
 
 namespace Warehouse_CMS.Repositories.Implementation
 {
-    public class EfCoreRepository<T>
+    public class EfCoreRepository<T> : IRepository<T>, IAsyncRepository<T>
         where T : class
     {
         protected readonly ApplicationDbContext _context;
