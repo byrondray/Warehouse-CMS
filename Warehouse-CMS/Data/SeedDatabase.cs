@@ -16,21 +16,25 @@ public static class SeedDatabase
 
         if (!dbContext.Categories.Any())
         {
-            var categories = new List<Category>
+            // Relationships are wired via navigation properties, not hardcoded FK ids: the
+            // database generates identity ids that are not guaranteed to be 1, 2, 3… on a
+            // fresh database, so assigning CategoryId = 1 etc. would throw an FK violation.
+            var construction = new Category
             {
-                new Category
-                {
-                    Name = "Construction Materials",
-                    Description = "Building and construction materials",
-                },
-                new Category { Name = "Tools", Description = "Construction and building tools" },
-                new Category
-                {
-                    Name = "Safety Equipment",
-                    Description = "Protective gear and safety supplies",
-                },
+                Name = "Construction Materials",
+                Description = "Building and construction materials",
             };
-            dbContext.Categories.AddRange(categories);
+            var tools = new Category
+            {
+                Name = "Tools",
+                Description = "Construction and building tools",
+            };
+            var safety = new Category
+            {
+                Name = "Safety Equipment",
+                Description = "Protective gear and safety supplies",
+            };
+            dbContext.Categories.AddRange(construction, tools, safety);
 
             var orderStatuses = new List<OrderStatus>
             {
@@ -41,24 +45,21 @@ public static class SeedDatabase
             };
             dbContext.OrderStatuses.AddRange(orderStatuses);
 
-            var suppliers = new List<Supplier>
+            var homeDepot = new Supplier
             {
-                new Supplier
-                {
-                    Name = "Home Depot",
-                    ContactPerson = "Mike Johnson",
-                    Email = "mike@techsupplies.com",
-                    Phone = "555-0123",
-                },
-                new Supplier
-                {
-                    Name = "Lowes",
-                    ContactPerson = "Sarah Williams",
-                    Email = "sarah@officefurniture.com",
-                    Phone = "555-0456",
-                },
+                Name = "Home Depot",
+                ContactPerson = "Mike Johnson",
+                Email = "mike@techsupplies.com",
+                Phone = "555-0123",
             };
-            dbContext.Suppliers.AddRange(suppliers);
+            var lowes = new Supplier
+            {
+                Name = "Lowes",
+                ContactPerson = "Sarah Williams",
+                Email = "sarah@officefurniture.com",
+                Phone = "555-0456",
+            };
+            dbContext.Suppliers.AddRange(homeDepot, lowes);
 
             var customers = new List<Customer>
             {
@@ -68,19 +69,22 @@ public static class SeedDatabase
             };
             dbContext.Customers.AddRange(customers);
 
+            var adminRole = dbContext.EmployeeRoles.First(r => r.Role == "Admin");
+            var salesRole = dbContext.EmployeeRoles.First(r => r.Role == "Sales Associate");
+
             var employees = new List<Employee>
             {
                 new Employee
                 {
                     Name = "Alice Brown",
                     StartDate = DateTime.UtcNow.AddYears(-2),
-                    EmployeeRoleId = 1,
+                    EmployeeRole = adminRole,
                 },
                 new Employee
                 {
                     Name = "Charlie Davis",
                     StartDate = DateTime.UtcNow.AddYears(-5),
-                    EmployeeRoleId = 2,
+                    EmployeeRole = salesRole,
                 },
             };
             dbContext.Employees.AddRange(employees);
@@ -93,8 +97,8 @@ public static class SeedDatabase
                     Description = "4' x 8' standard drywall sheet, 1/2\" thickness",
                     Price = 12.99m,
                     StockQuantity = 250,
-                    CategoryId = 1,
-                    SupplierId = 1,
+                    Category = construction,
+                    Supplier = homeDepot,
                 },
                 new Product
                 {
@@ -102,8 +106,8 @@ public static class SeedDatabase
                     Description = "16 oz. claw hammer with fiberglass handle",
                     Price = 14.99m,
                     StockQuantity = 75,
-                    CategoryId = 2,
-                    SupplierId = 2,
+                    Category = tools,
+                    Supplier = lowes,
                 },
                 new Product
                 {
@@ -111,8 +115,8 @@ public static class SeedDatabase
                     Description = "60 lb. ready-to-use concrete mix",
                     Price = 6.50m,
                     StockQuantity = 320,
-                    CategoryId = 1,
-                    SupplierId = 1,
+                    Category = construction,
+                    Supplier = homeDepot,
                 },
             };
             dbContext.Products.AddRange(products);
