@@ -44,6 +44,18 @@ railway up
 - Useful CLI: `railway status`, `railway logs`, `railway up`.
 - Health check endpoint: `/health` (anonymous)
 
+### Deploy verification (learned the hard way)
+
+- `railway up --ci` often prints `Failed to stream build logs` and exits non-zero **even when the build succeeds** — that message is a CLI log-streaming failure, not a build failure. Don't trust the CLI exit code; poll the real status instead: `railway status --json` and read `.services.edges[] | select(.node.name=="Warehouse-CMS") | .node.serviceInstances.edges[0].node.latestDeployment.status` until it leaves `BUILDING`/`QUEUED`/`DEPLOYING` (terminal states: `SUCCESS`, `FAILED`, `CRASHED`).
+- `railway logs` tails and never exits — run it in the background or it will hang the shell. Log streaming is also flaky, so prefer HTTP checks over logs to confirm health.
+- To verify a deploy without touching secrets: (1) `GET /health` should return `200 "healthy"` (proves boot + runtime port binding); (2) `GET /` should 302 to `/Identity/Account/Login` which renders `200` (proves auth + Razor); (3) POST bad credentials to `/Identity/Account/Login` — a `200` with "Invalid login attempt" proves the Postgres connection and migrations work (a broken DB 500s instead).
+- Don't run `railway variables` (dumps secret values). To check which vars exist, list only the key names.
+
+### Known production state (as of 2026-07-11)
+
+- **`ADMIN_PASSWORD` is not set** on the service. Because seeding throws (caught + logged, non-fatal) when it's missing outside Development, deploys currently do **not** create an admin user. Set `ADMIN_PASSWORD` (and optionally `ADMIN_EMAIL`) and redeploy to seed one, unless an admin already exists in the Postgres volume.
+- A service-level `ASPNETCORE_URLS` variable exists but is now redundant — the Dockerfile ENTRYPOINT sets the URL at container start. Harmless, but safe to remove.
+
 ## Architecture
 
 ### Database provider (Program.cs)
